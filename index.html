@@ -1,1583 +1,182 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Digital Aquarium</title>
-  <style>
-    :root{
-      --bg1:#04111f;
-      --bg2:#082844;
-      --bg3:#0b4f67;
-      --glass: rgba(255,255,255,.10);
-      --glass2: rgba(255,255,255,.16);
-      --text: rgba(243, 250, 255, .96);
-      --muted: rgba(202, 227, 255, .72);
-      --accent: #68f2ff;
-      --accent2:#9d6bff;
-      --accent3:#ffcc66;
-      --danger:#ff6b9a;
-      --shadow: 0 24px 80px rgba(0,0,0,.35);
-      --radius: 22px;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT Image Generator</title>
 
-    html, body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      overflow: hidden;
-      background:
-        radial-gradient(1200px 900px at 70% -10%, rgba(107, 185, 255, .13), transparent 62%),
-        radial-gradient(1000px 700px at 10% 0%, rgba(125, 255, 214, .08), transparent 60%),
-        linear-gradient(180deg, #03101d 0%, #04182a 42%, #03243a 100%);
-      color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: none;
-    }
+    <style>
 
-    #stage {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      display: block;
-      cursor: crosshair;
-      background: transparent;
-    }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
 
-    .ui {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 18px;
-      box-sizing: border-box;
-    }
+        textarea {
+            width: 100%;
+            height: 150px;
+            font-size: 16px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
 
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 18px;
-      flex-wrap: wrap;
-    }
+        button {
+            margin-top: 20px;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+        }
 
-    .panel {
-      pointer-events: auto;
-      background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.07));
-      border: 1px solid rgba(255,255,255,.18);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(16px) saturate(150%);
-      -webkit-backdrop-filter: blur(16px) saturate(150%);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
+        #loading {
+            margin-top: 20px;
+            font-size: 18px;
+            color: blue;
+            display: none;
+        }
 
-    .titleCard {
-      min-width: min(470px, calc(100vw - 36px));
-      padding: 18px 20px 16px;
-      position: relative;
-      isolation: isolate;
-    }
+        #resultImage {
+            margin-top: 30px;
+            max-width: 100%;
+            border: 1px solid #ccc;
+            display: none;
+        }
 
-    .titleCard::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(650px 120px at 30% 0%, rgba(104,242,255,.22), transparent 55%),
-        radial-gradient(500px 120px at 70% 0%, rgba(157,107,255,.20), transparent 58%);
-      opacity: .9;
-      z-index: -1;
-    }
+        #downloadButton {
+            display: none;
+            margin-top: 20px;
+        }
 
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      color: rgba(224,248,255,.86);
-      margin-bottom: 8px;
-    }
-
-    .eyebrow .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: linear-gradient(135deg, #84f7ff, #a66bff);
-      box-shadow: 0 0 14px rgba(104,242,255,.9);
-    }
-
-    h1 {
-      margin: 0;
-      font-size: clamp(24px, 3vw, 46px);
-      line-height: 1.02;
-      letter-spacing: .02em;
-      text-shadow: 0 0 18px rgba(104,242,255,.18);
-    }
-
-    .subtitle {
-      margin-top: 8px;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.7;
-      max-width: 72ch;
-    }
-
-    .stats {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 11px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.12);
-      font-size: 12px;
-      color: rgba(246,251,255,.92);
-      white-space: nowrap;
-    }
-
-    .chip b {
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .controls {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      min-width: 250px;
-      padding: 14px;
-    }
-
-    .groupTitle {
-      font-size: 12px;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-      color: rgba(225,247,255,.8);
-      margin-bottom: 2px;
-    }
-
-    .btnRow {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    button {
-      appearance: none;
-      border: 0;
-      outline: none;
-      cursor: pointer;
-      color: rgba(255,255,255,.95);
-      background: linear-gradient(180deg, rgba(104,242,255,.18), rgba(104,242,255,.08));
-      border: 1px solid rgba(134, 244, 255, .25);
-      border-radius: 14px;
-      padding: 10px 12px;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: .01em;
-      transition: transform .18s ease, background .18s ease, box-shadow .18s ease, border-color .18s ease;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 30px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.16);
-      border-color: rgba(173,247,255,.5);
-    }
-
-    button.active {
-      background: linear-gradient(180deg, rgba(157,107,255,.36), rgba(104,242,255,.15));
-      border-color: rgba(205, 174, 255, .75);
-      box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 0 28px rgba(157,107,255,.22);
-    }
-
-    button.secondary {
-      background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.06));
-      border-color: rgba(255,255,255,.16);
-    }
-
-    .help {
-      margin-top: 8px;
-      color: rgba(232,246,255,.78);
-      font-size: 12px;
-      line-height: 1.6;
-    }
-
-    .footerBar {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 14px;
-      flex-wrap: wrap;
-      pointer-events: none;
-    }
-
-    .hintCard {
-      pointer-events: auto;
-      max-width: min(700px, calc(100vw - 36px));
-      padding: 12px 14px;
-      border-radius: 18px;
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
-      border: 1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(14px);
-      color: rgba(237,249,255,.84);
-      font-size: 12px;
-      line-height: 1.7;
-    }
-
-    .hintCard strong {
-      color: #fff;
-    }
-
-    .badge {
-      pointer-events: none;
-      padding: 10px 12px;
-      border-radius: 999px;
-      background: rgba(0,0,0,.24);
-      border: 1px solid rgba(255,255,255,.12);
-      font-size: 12px;
-      color: rgba(239,251,255,.86);
-      backdrop-filter: blur(10px);
-      white-space: nowrap;
-    }
-
-    .cinema .ui {
-      opacity: 0.12;
-      transition: opacity .35s ease;
-    }
-
-    .cinema #stage {
-      cursor: none;
-    }
-
-    .notice {
-      position: fixed;
-      right: 16px;
-      top: 16px;
-      pointer-events: none;
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: rgba(7, 19, 34, .35);
-      border: 1px solid rgba(255,255,255,.12);
-      color: rgba(235,248,255,.88);
-      font-size: 12px;
-      opacity: 0;
-      transform: translateY(-8px);
-      transition: opacity .24s ease, transform .24s ease;
-      backdrop-filter: blur(10px);
-    }
-
-    .notice.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    @media (max-width: 900px) {
-      .topbar {
-        flex-direction: column;
-      }
-      .controls {
-        width: min(100%, 520px);
-      }
-      .titleCard {
-        min-width: 0;
-      }
-      .footerBar {
-        align-items: flex-start;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      * {
-        animation: none !important;
-        transition: none !important;
-        scroll-behavior: auto !important;
-      }
-    }
-  </style>
+    </style>
 </head>
+
 <body>
-  <canvas id="stage"></canvas>
 
-  <div class="ui" id="ui">
-    <div class="topbar">
-      <section class="panel titleCard">
-        <div class="eyebrow"><span class="dot"></span> Digital Aquarium / Living Aquarium</div>
-        <h1>光る海の実験室</h1>
-        <div class="subtitle">
-          クリックで餌をまき、魚を増やし、珊瑚を育てる。<br>
-          マウスを動かすと水流が生まれ、魚たちは群れ、泡は昇り、深海は呼吸します。
-        </div>
-        <div class="stats">
-          <div class="chip">Fish <b id="statFish">0</b></div>
-          <div class="chip">Food <b id="statFood">0</b></div>
-          <div class="chip">Coral <b id="statCoral">0</b></div>
-          <div class="chip">Mood <b id="statMood">Calm</b></div>
-          <div class="chip">Time <b id="statTime">Dawn</b></div>
-        </div>
-      </section>
+    <h1>GPT Image Generator</h1>
 
-      <section class="panel controls">
-        <div class="groupTitle">Tools</div>
-        <div class="btnRow">
-          <button id="btnFeed" class="active">1 Feed</button>
-          <button id="btnFish">2 Add Fish</button>
-          <button id="btnCoral">3 Coral</button>
-          <button id="btnReset" class="secondary">R Reset</button>
-        </div>
-        <div class="btnRow">
-          <button id="btnCinema" class="secondary">C Cinema</button>
-          <button id="btnWave" class="secondary">V Current Burst</button>
-          <button id="btnHaze" class="secondary">H Bioluminescence</button>
-        </div>
-        <div class="help">
-          <strong>操作:</strong> クリック/タップで現在のツールを実行。<br>
-          マウスを動かすと水流が発生し、ドラッグでさらに強くなります。<br>
-          ショートカット: <strong>1</strong> 餌 / <strong>2</strong> 魚 / <strong>3</strong> 珊瑚 / <strong>Space</strong> 一時停止 / <strong>R</strong> リセット / <strong>C</strong> 映画モード
-        </div>
-      </section>
+    <textarea id="promptInput"
+        placeholder="生成したい画像を入力してください"></textarea>
+
+    <br>
+
+    <button onclick="generateImage()">
+        画像生成
+    </button>
+
+    <div id="loading">
+        画像生成中です...（数分かかることがあります）
     </div>
 
-    <div class="footerBar">
-      <div class="hintCard panel">
-        <strong>遊び方:</strong> 餌を続けて与えると魚が育ち、まれにベビーが誕生します。珊瑚は底の景観を形成し、泡の気泡塔やクラゲの発光が水槽に奥行きを与えます。
-      </div>
-      <div class="badge panel" id="badge">Ready. Tap the aquarium.</div>
-    </div>
-  </div>
+    <img id="resultImage">
 
-  <div class="notice" id="notice"></div>
+    <br>
 
-  <script>
-    (() => {
-      const canvas = document.getElementById("stage");
-      const ctx = canvas.getContext("2d", { alpha: true });
-      const ui = document.getElementById("ui");
-      const notice = document.getElementById("notice");
+    <a id="downloadButton" download="generated_image.png">
+        <button>画像ダウンロード</button>
+    </a>
 
-      const statFish = document.getElementById("statFish");
-      const statFood = document.getElementById("statFood");
-      const statCoral = document.getElementById("statCoral");
-      const statMood = document.getElementById("statMood");
-      const statTime = document.getElementById("statTime");
-      const badge = document.getElementById("badge");
+    <script>
 
-      const btnFeed = document.getElementById("btnFeed");
-      const btnFish = document.getElementById("btnFish");
-      const btnCoral = document.getElementById("btnCoral");
-      const btnReset = document.getElementById("btnReset");
-      const btnCinema = document.getElementById("btnCinema");
-      const btnWave = document.getElementById("btnWave");
-      const btnHaze = document.getElementById("btnHaze");
+        async function generateImage() {
 
-      const TAU = Math.PI * 2;
+            const prompt =
+                document.getElementById('promptInput').value;
 
-      let W = 0, H = 0, DPR = 1;
-      let t = 0;
-      let last = performance.now();
-      let paused = false;
-      let cinema = false;
-      let biolume = true;
-      let currentTool = "feed";
-      let showNoticeTimer = 0;
-      let frameCounter = 0;
-      let fps = 60;
-
-      const pointer = {
-        x: 0,
-        y: 0,
-        px: 0,
-        py: 0,
-        vx: 0,
-        vy: 0,
-        down: false,
-        moved: false,
-        active: false,
-        pressure: 0
-      };
-
-      const world = {
-        fish: [],
-        food: [],
-        bubbles: [],
-        corals: [],
-        plankton: [],
-        sparks: [],
-        jellies: [],
-        vents: [],
-        waves: [],
-        mood: "Calm"
-      };
-
-      const rand = (a = 1, b = 0) => Math.random() * (a - b) + b;
-      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-      const lerp = (a, b, t) => a + (b - a) * t;
-      const ease = t => t * t * (3 - 2 * t);
-      const hypot2 = (dx, dy) => dx * dx + dy * dy;
-      const nowTime = () => performance.now() * 0.001;
-
-      function showToast(text, ms = 1200) {
-        notice.textContent = text;
-        notice.classList.add("show");
-        clearTimeout(showToast._timer);
-        showToast._timer = setTimeout(() => notice.classList.remove("show"), ms);
-      }
-
-      function setBadge(text) {
-        badge.textContent = text;
-      }
-
-      function resize() {
-        DPR = Math.min(window.devicePixelRatio || 1, 2);
-        W = window.innerWidth;
-        H = window.innerHeight;
-        canvas.width = Math.round(W * DPR);
-        canvas.height = Math.round(H * DPR);
-        canvas.style.width = W + "px";
-        canvas.style.height = H + "px";
-        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-        seedScenery(true);
-      }
-
-      function seedScenery(initial = false) {
-        world.plankton.length = 0;
-        world.jellies.length = 0;
-        world.vents.length = 0;
-        if (initial) {
-          world.fish.length = 0;
-          world.food.length = 0;
-          world.bubbles.length = 0;
-          world.corals.length = 0;
-          world.sparks.length = 0;
-        }
-
-        const planktonCount = Math.floor(clamp(W * H / 15000, 95, 180));
-        for (let i = 0; i < planktonCount; i++) {
-          world.plankton.push({
-            x: Math.random() * W,
-            y: Math.random() * H,
-            z: rand(0.2, 1),
-            r: rand(0.8, 2.8),
-            hue: rand(175, 195) + (Math.random() < .2 ? 35 : 0),
-            a: rand(0.08, 0.55),
-            v: rand(1.4, 9.5)
-          });
-        }
-
-        const ventCount = Math.max(2, Math.floor(W / 420));
-        for (let i = 0; i < ventCount; i++) {
-          world.vents.push({
-            x: lerp(W * 0.14, W * 0.86, (i + 1) / (ventCount + 1)) + rand(-60, 60),
-            rate: rand(0.8, 2.1),
-            heat: rand(0.7, 1.5),
-            phase: rand(TAU)
-          });
-        }
-
-        const jellyCount = Math.max(3, Math.floor(W / 380));
-        for (let i = 0; i < jellyCount; i++) {
-          spawnJelly(
-            lerp(W * 0.1, W * 0.9, Math.random()),
-            lerp(H * 0.18, H * 0.62, Math.random()),
-            rand(18, 42),
-            Math.random()
-          );
-        }
-
-        if (initial) {
-          for (let i = 0; i < 18; i++) {
-            spawnFish(
-              rand(W * 0.15, W * 0.85),
-              rand(H * 0.20, H * 0.82),
-              Math.floor(rand(4)),
-              rand(0.65, 1.15)
-            );
-          }
-          for (let i = 0; i < 8; i++) {
-            spawnCoral(rand(W * 0.08, W * 0.92), H - rand(18, 32), true);
-          }
-        } else {
-          // keep existing fish and coral
-          for (let i = 0; i < 6; i++) {
-            spawnBubble(rand(W), H + rand(30, 100), rand(2, 6), rand(-.2, .2), rand(30, 120), true);
-          }
-        }
-      }
-
-      function makeFishStyle(species, ageFactor = 1) {
-        const palettes = [
-          { body: [185, 92, 56], accent: [55, 240, 255], fin: [130, 75, 255] },
-          { body: [28, 175, 248], accent: [255, 255, 255], fin: [255, 180, 94] },
-          { body: [255, 147, 58], accent: [255, 248, 204], fin: [255, 91, 146] },
-          { body: [92, 255, 194], accent: [32, 104, 255], fin: [255, 160, 214] }
-        ];
-        return palettes[species % palettes.length];
-      }
-
-      function spawnFish(x, y, species = Math.floor(rand(4)), scale = 1) {
-        const style = makeFishStyle(species);
-        const dir = Math.random() < 0.5 ? -1 : 1;
-        const size = rand(14, 26) * scale;
-        world.fish.push({
-          x, y,
-          vx: rand(30, 80) * dir,
-          vy: rand(-20, 20),
-          angle: dir > 0 ? 0 : Math.PI,
-          size,
-          base: size,
-          species,
-          style,
-          speed: rand(40, 76) * (0.82 + scale * 0.35),
-          hunger: rand(0.05, 0.8),
-          energy: rand(0.1, 0.55),
-          age: rand(0, 30),
-          phase: rand(TAU),
-          seed: Math.random() * 999,
-          pulse: 0
-        });
-      }
-
-      function spawnFood(x = W * 0.5, y = H * 0.14, count = 9) {
-        for (let i = 0; i < count; i++) {
-          world.food.push({
-            x: x + rand(-42, 42),
-            y: y + rand(-22, 22),
-            vx: rand(-12, 12),
-            vy: rand(18, 42),
-            r: rand(2.2, 4.8),
-            life: rand(8, 12),
-            glow: rand(0.8, 1.4),
-            kind: Math.random() < 0.24 ? 1 : 0
-          });
-        }
-      }
-
-      function spawnBubble(x, y, r = rand(2, 6), vx = rand(-8, 8), vy = rand(24, 48), silent = false) {
-        world.bubbles.push({
-          x, y, r, vx, vy,
-          wob: rand(TAU),
-          life: rand(5, 11),
-          alpha: rand(.25, .58),
-          silent
-        });
-      }
-
-      function spawnSpark(x, y, color = [104, 242, 255], force = 1) {
-        const n = Math.floor(rand(8, 18));
-        for (let i = 0; i < n; i++) {
-          const a = rand(TAU);
-          const sp = rand(26, 180) * force;
-          world.sparks.push({
-            x, y,
-            vx: Math.cos(a) * sp,
-            vy: Math.sin(a) * sp - rand(0, 40),
-            life: rand(0.35, 1.2),
-            t: 0,
-            size: rand(0.9, 2.2),
-            color
-          });
-        }
-      }
-
-      function spawnCoral(x = rand(W * 0.12, W * 0.88), y = H - rand(14, 28), auto = false) {
-        const height = rand(60, 150);
-        const spread = rand(18, 42);
-        const hue = rand(330, 15);
-        world.corals.push({
-          x, y,
-          height,
-          spread,
-          hue,
-          scale: rand(0.72, 1.15),
-          bends: Math.floor(rand(4, 7)),
-          auto,
-          sway: rand(TAU),
-          radius: spread * 1.2 + height * 0.28
-        });
-      }
-
-      function spawnJelly(x, y, r, drift) {
-        world.jellies.push({
-          x, y,
-          r,
-          drift,
-          phase: rand(TAU),
-          hue: rand(180, 290),
-          glow: rand(.7, 1.4),
-          tentacles: Math.floor(rand(6, 10)),
-          alpha: rand(.22, .52)
-        });
-      }
-
-      function setTool(tool) {
-        currentTool = tool;
-        btnFeed.classList.toggle("active", tool === "feed");
-        btnFish.classList.toggle("active", tool === "fish");
-        btnCoral.classList.toggle("active", tool === "coral");
-        setBadge(tool === "feed" ? "Feed mode: grow the school" : tool === "fish" ? "Fish mode: click to add a new swimmer" : "Coral mode: build a reef");
-      }
-
-      function toggleCinema(force) {
-        cinema = typeof force === "boolean" ? force : !cinema;
-        document.body.classList.toggle("cinema", cinema);
-        btnCinema.classList.toggle("active", cinema);
-        showToast(cinema ? "Cinema mode ON" : "Cinema mode OFF");
-      }
-
-      function toggleHaze(force) {
-        biolume = typeof force === "boolean" ? force : !biolume;
-        btnHaze.classList.toggle("active", biolume);
-        showToast(biolume ? "Bioluminescence ON" : "Bioluminescence OFF");
-      }
-
-      function resetWorld() {
-        world.fish.length = 0;
-        world.food.length = 0;
-        world.bubbles.length = 0;
-        world.corals.length = 0;
-        world.sparks.length = 0;
-        seedScenery(true);
-        showToast("Aquarium reset.");
-      }
-
-      function currentMood() {
-        const alive = world.fish.length;
-        const food = world.food.length;
-        if (alive < 8) return "Quiet";
-        if (food > 25) return "Feeding";
-        if (alive > 30) return "Thriving";
-        if (t % 80 > 60) return "Dreaming";
-        return "Calm";
-      }
-
-      function timeLabel(day) {
-        if (day < .18) return "Midnight";
-        if (day < .32) return "Deep Sea";
-        if (day < .47) return "Dawn";
-        if (day < .63) return "Daylight";
-        if (day < .82) return "Sunset";
-        return "Nightfall";
-      }
-
-      function drawBackground(day, night, amp) {
-        const top = { r: lerp(2, 9, night), g: lerp(24, 40, day), b: lerp(46, 90, day) };
-        const mid = { r: lerp(2, 12, night), g: lerp(39, 95, day), b: lerp(62, 128, day) };
-        const bottom = { r: lerp(3, 5, night), g: lerp(13, 28, day), b: lerp(26, 52, day) };
-
-        const g = ctx.createLinearGradient(0, 0, 0, H);
-        g.addColorStop(0, `rgb(${top.r|0}, ${top.g|0}, ${top.b|0})`);
-        g.addColorStop(0.5, `rgb(${mid.r|0}, ${mid.g|0}, ${mid.b|0})`);
-        g.addColorStop(1, `rgb(${bottom.r|0}, ${bottom.g|0}, ${bottom.b|0})`);
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, W, H);
-
-        // horizon glow
-        const sunX = lerp(W * 0.2, W * 0.78, (Math.sin(t * .05) + 1) * .5);
-        const sunY = lerp(H * 0.08, H * 0.22, night);
-        const rg = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, Math.max(W, H) * .52);
-        rg.addColorStop(0, `rgba(${lerp(255, 100, night)|0}, ${lerp(240, 180, night)|0}, ${lerp(170, 255, night)|0}, ${lerp(.26, .12, night)})`);
-        rg.addColorStop(0.35, `rgba(${lerp(89, 16, night)|0}, ${lerp(220, 80, night)|0}, ${lerp(255, 120, night)|0}, ${lerp(.16, .06, night)})`);
-        rg.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = rg;
-        ctx.fillRect(0, 0, W, H);
-
-        // light shafts
-        ctx.save();
-        ctx.globalCompositeOperation = "screen";
-        for (let i = 0; i < 7; i++) {
-          const x0 = W * (0.10 + i * 0.14) + Math.sin(t * 0.3 + i * 1.7) * 32;
-          const w = 65 + i * 8;
-          ctx.beginPath();
-          ctx.moveTo(x0 - w, 0);
-          ctx.lineTo(x0 + w, 0);
-          ctx.lineTo(x0 + w * 0.42, H);
-          ctx.lineTo(x0 - w * 0.75, H);
-          ctx.closePath();
-          ctx.fillStyle = `rgba(168, 255, 244, ${0.018 + day * 0.018})`;
-          ctx.fill();
-        }
-        ctx.restore();
-
-        // caustic shimmer
-        ctx.save();
-        ctx.globalCompositeOperation = "screen";
-        const shimmerY = H * 0.12;
-        for (let i = 0; i < 12; i++) {
-          const y = shimmerY + i * 18 + Math.sin(t * 1.8 + i * 1.17) * 3;
-          ctx.beginPath();
-          for (let x = -20; x <= W + 20; x += 30) {
-            const yy = y + Math.sin((x * 0.01) + t * 0.9 + i) * (2.5 + amp * 2.4) + Math.cos((x * 0.013) - t * 0.6) * 1.8;
-            if (x === -20) ctx.moveTo(x, yy);
-            else ctx.lineTo(x, yy);
-          }
-          ctx.strokeStyle = `rgba(235,255,255, ${0.018 + day * 0.03})`;
-          ctx.lineWidth = 1.15;
-          ctx.stroke();
-        }
-        ctx.restore();
-
-        // depth fog
-        const fog = ctx.createLinearGradient(0, H * 0.18, 0, H);
-        fog.addColorStop(0, "rgba(255,255,255,.00)");
-        fog.addColorStop(1, `rgba(0, 11, 26, ${0.33 + night * .14})`);
-        ctx.fillStyle = fog;
-        ctx.fillRect(0, 0, W, H);
-
-        // vignette
-        const vg = ctx.createRadialGradient(W * 0.5, H * 0.45, Math.min(W, H) * 0.1, W * 0.5, H * 0.5, Math.max(W, H) * 0.75);
-        vg.addColorStop(0, "rgba(0,0,0,0)");
-        vg.addColorStop(1, `rgba(0,0,0,${0.26 + night * .22})`);
-        ctx.fillStyle = vg;
-        ctx.fillRect(0, 0, W, H);
-
-        // glass edges
-        ctx.save();
-        ctx.strokeStyle = "rgba(255,255,255,.10)";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(12, 12, W - 24, H - 24);
-        ctx.strokeStyle = "rgba(255,255,255,.04)";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(22, 22, W - 44, H - 44);
-        ctx.restore();
-
-        // top reflection
-        ctx.save();
-        ctx.globalCompositeOperation = "screen";
-        const refl = ctx.createLinearGradient(0, 0, 0, H * 0.18);
-        refl.addColorStop(0, `rgba(255,255,255,${0.09 + day * .05})`);
-        refl.addColorStop(1, "rgba(255,255,255,0)");
-        ctx.fillStyle = refl;
-        ctx.fillRect(0, 0, W, H * 0.18);
-        ctx.restore();
-      }
-
-      function drawCoral(c) {
-        ctx.save();
-        ctx.translate(c.x, c.y);
-        ctx.scale(c.scale, c.scale);
-        ctx.globalCompositeOperation = "source-over";
-        const sway = Math.sin(t * 0.7 + c.sway) * 3;
-        const stemTop = -c.height;
-
-        // shadow glow
-        ctx.save();
-        ctx.shadowBlur = 16;
-        ctx.shadowColor = `hsla(${c.hue}, 95%, 66%, .4)`;
-        ctx.strokeStyle = `hsla(${c.hue}, 90%, 65%, .8)`;
-        ctx.lineCap = "round";
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.bezierCurveTo(-4, -c.height * .35, 4, -c.height * .72, sway, stemTop);
-        ctx.stroke();
-        ctx.restore();
-
-        for (let i = 0; i < c.bends; i++) {
-          const y = lerp(0, stemTop * .92, i / (c.bends - 1));
-          const sway2 = Math.sin(t * .5 + c.sway + i * .8) * (3 + i * 1.2);
-          ctx.strokeStyle = `hsla(${(c.hue + i * 7) % 360}, 85%, ${58 + i * 3}%, .92)`;
-          ctx.lineWidth = 3.8 - i * .15;
-          ctx.beginPath();
-          ctx.moveTo(0, 0);
-          ctx.bezierCurveTo(-5 + sway2, y * .25, 7 - sway2 * .3, y * .72, sway2, y);
-          ctx.stroke();
-          if (i > 1) {
-            ctx.beginPath();
-            ctx.moveTo(sway2 * .55, y * .9);
-            ctx.bezierCurveTo(sway2 * 1.2, y * .55, sway2 * 1.6, y * .25, sway2 * 2.0, y * .08);
-            ctx.stroke();
-          }
-        }
-
-        // fronds
-        for (let i = 0; i < 8; i++) {
-          const a = (i / 8) * TAU + c.sway * .2;
-          const len = c.spread * (0.55 + Math.sin(t * 1.4 + i) * .12);
-          const px = Math.sin(a) * len * .55;
-          const py = stemTop * (0.42 + i * 0.05);
-          ctx.strokeStyle = `hsla(${(c.hue + 55 + i * 6) % 360}, 95%, 72%, .65)`;
-          ctx.lineWidth = 1.8;
-          ctx.beginPath();
-          ctx.moveTo(0, py);
-          ctx.quadraticCurveTo(px * .3, py - len * .15, px, py - len);
-          ctx.stroke();
-        }
-
-        // polyps
-        ctx.save();
-        ctx.fillStyle = `hsla(${(c.hue + 12) % 360}, 100%, 76%, .95)`;
-        ctx.shadowBlur = 14;
-        ctx.shadowColor = `hsla(${(c.hue + 12) % 360}, 100%, 70%, .55)`;
-        for (let i = 0; i < 12; i++) {
-          const px = Math.sin(i * 1.7 + c.sway) * c.spread * .66;
-          const py = stemTop * (0.25 + i * 0.05) + Math.cos(i * 1.2 + t) * 2;
-          ctx.beginPath();
-          ctx.arc(px, py, rand(1.2, 2.5), 0, TAU);
-          ctx.fill();
-        }
-        ctx.restore();
-
-        ctx.restore();
-      }
-
-      function drawJelly(j) {
-        const bob = Math.sin(t * 0.8 + j.phase) * 10;
-        const x = j.x + Math.sin(t * 0.2 + j.phase) * 20;
-        const y = j.y + bob;
-        const pulse = 1 + Math.sin(t * 2.2 + j.phase) * 0.03;
-        const r = j.r * pulse;
-
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.globalCompositeOperation = "screen";
-        ctx.shadowBlur = 24;
-        ctx.shadowColor = `hsla(${j.hue}, 100%, 76%, ${j.alpha})`;
-
-        // dome
-        const g = ctx.createRadialGradient(0, -r * .4, r * .2, 0, 0, r * 1.25);
-        g.addColorStop(0, `hsla(${j.hue}, 100%, 85%, ${j.alpha * 1.1})`);
-        g.addColorStop(0.55, `hsla(${(j.hue + 20) % 360}, 95%, 70%, ${j.alpha * .85})`);
-        g.addColorStop(1, `hsla(${(j.hue + 60) % 360}, 90%, 50%, 0)`);
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(0, 0, r, Math.PI, TAU);
-        ctx.quadraticCurveTo(r, r * .66, r * .88, r * 1.24);
-        ctx.quadraticCurveTo(0, r * 1.55, -r * .88, r * 1.24);
-        ctx.quadraticCurveTo(-r, r * .66, -r, 0);
-        ctx.fill();
-
-        // inner glow
-        ctx.globalAlpha = 0.7;
-        ctx.beginPath();
-        ctx.arc(0, -r * 0.16, r * 0.42, 0, TAU);
-        ctx.fillStyle = `hsla(${(j.hue + 15) % 360}, 100%, 86%, .55)`;
-        ctx.fill();
-
-        // tentacles
-        ctx.strokeStyle = `hsla(${(j.hue + 20) % 360}, 100%, 78%, ${j.alpha * .55})`;
-        ctx.lineWidth = 1.3;
-        for (let i = 0; i < j.tentacles; i++) {
-          const off = lerp(-r * .72, r * .72, i / (j.tentacles - 1));
-          const len = r * rand(1.2, 2.4);
-          ctx.beginPath();
-          ctx.moveTo(off, r * .82);
-          ctx.bezierCurveTo(
-            off + Math.sin(t * 1.5 + i) * 5,
-            r * 1.0,
-            off + Math.sin(t * 2.1 + i) * 8,
-            r * 1.5,
-            off + Math.sin(t * 1.3 + i) * 14,
-            r * 1.0 + len
-          );
-          ctx.stroke();
-        }
-
-        ctx.restore();
-      }
-
-      function drawFood(f) {
-        ctx.save();
-        ctx.translate(f.x, f.y);
-        ctx.globalCompositeOperation = "screen";
-        ctx.shadowBlur = 18;
-        ctx.shadowColor = f.kind ? "rgba(255,200,120,.9)" : "rgba(104,242,255,.85)";
-        const g = ctx.createRadialGradient(0, 0, 0, 0, 0, f.r * 3.2);
-        if (f.kind) {
-          g.addColorStop(0, "rgba(255, 237, 184, .98)");
-          g.addColorStop(0.4, "rgba(255, 181, 92, .72)");
-          g.addColorStop(1, "rgba(255, 181, 92, 0)");
-        } else {
-          g.addColorStop(0, "rgba(172, 255, 255, .96)");
-          g.addColorStop(0.4, "rgba(104, 242, 255, .70)");
-          g.addColorStop(1, "rgba(104, 242, 255, 0)");
-        }
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(0, 0, f.r * 2.1, 0, TAU);
-        ctx.fill();
-        ctx.fillStyle = f.kind ? "rgba(255, 249, 223, .95)" : "rgba(240, 255, 255, .92)";
-        ctx.beginPath();
-        ctx.arc(0, 0, f.r, 0, TAU);
-        ctx.fill();
-        ctx.restore();
-      }
-
-      function drawBubble(b) {
-        ctx.save();
-        ctx.translate(b.x, b.y);
-        ctx.globalCompositeOperation = "screen";
-        ctx.strokeStyle = `rgba(220, 248, 255, ${b.alpha})`;
-        ctx.lineWidth = 1.2;
-        ctx.shadowBlur = 14;
-        ctx.shadowColor = "rgba(192, 245, 255, .45)";
-        ctx.beginPath();
-        ctx.arc(0, 0, b.r, 0, TAU);
-        ctx.stroke();
-        ctx.fillStyle = `rgba(255,255,255,${b.alpha * .18})`;
-        ctx.beginPath();
-        ctx.arc(-b.r * .26, -b.r * .28, b.r * .2, 0, TAU);
-        ctx.fill();
-        ctx.restore();
-      }
-
-      function drawSpark(s) {
-        const p = s.t / s.life;
-        const a = 1 - p;
-        ctx.save();
-        ctx.translate(s.x, s.y);
-        ctx.globalCompositeOperation = "screen";
-        ctx.fillStyle = `rgba(${s.color[0]}, ${s.color[1]}, ${s.color[2]}, ${a})`;
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = `rgba(${s.color[0]}, ${s.color[1]}, ${s.color[2]}, ${a})`;
-        ctx.beginPath();
-        ctx.arc(0, 0, s.size * (0.8 + a * 1.2), 0, TAU);
-        ctx.fill();
-        ctx.restore();
-      }
-
-      function drawFish(f) {
-        const s = f.size;
-        const bodyW = s * 1.55;
-        const bodyH = s * 0.9;
-        const tail = s * 0.78;
-        const eyeX = bodyW * 0.28;
-        const eyeY = -bodyH * 0.12;
-
-        ctx.save();
-        ctx.translate(f.x, f.y);
-        ctx.rotate(f.angle);
-        ctx.scale(f.angle < 0 ? -1 : 1, 1);
-        ctx.globalCompositeOperation = "source-over";
-
-        const pulse = 1 + Math.sin(t * 4 + f.phase) * 0.03;
-        const glow = 0.55 + Math.max(0, Math.sin(t * 2.4 + f.phase));
-        const g = ctx.createLinearGradient(-bodyW * .9, 0, bodyW, 0);
-        const col = f.style.body;
-        const accent = f.style.accent;
-        const fin = f.style.fin;
-        g.addColorStop(0, `rgba(${Math.floor(col[0] * .55)}, ${Math.floor(col[1] * .5)}, ${Math.floor(col[2] * .55)}, .96)`);
-        g.addColorStop(0.45, `rgba(${col[0]}, ${col[1]}, ${col[2]}, .98)`);
-        g.addColorStop(1, `rgba(${Math.min(255, col[0] + 42)}, ${Math.min(255, col[1] + 42)}, ${Math.min(255, col[2] + 42)}, .98)`);
-
-        ctx.shadowBlur = 22 * glow;
-        ctx.shadowColor = `rgba(${accent[0]}, ${accent[1]}, ${accent[2]}, ${0.4 + f.energy * .35})`;
-
-        // tail
-        ctx.fillStyle = `rgba(${fin[0]}, ${fin[1]}, ${fin[2]}, .84)`;
-        ctx.beginPath();
-        ctx.moveTo(-bodyW * .95, 0);
-        ctx.quadraticCurveTo(-bodyW * 1.15, -tail * .72, -bodyW * 1.45, -tail * .1);
-        ctx.quadraticCurveTo(-bodyW * 1.2, tail * .62, -bodyW * .95, 0);
-        ctx.fill();
-
-        // dorsal fin
-        ctx.beginPath();
-        ctx.moveTo(-bodyW * .15, -bodyH * .36);
-        ctx.quadraticCurveTo(bodyW * .05, -bodyH * .88, bodyW * .28, -bodyH * .32);
-        ctx.quadraticCurveTo(bodyW * .08, -bodyH * .18, -bodyW * .15, -bodyH * .36);
-        ctx.fill();
-
-        // ventral fin
-        ctx.beginPath();
-        ctx.moveTo(-bodyW * .02, bodyH * .24);
-        ctx.quadraticCurveTo(bodyW * .08, bodyH * .84, bodyW * .30, bodyH * .22);
-        ctx.quadraticCurveTo(bodyW * .10, bodyH * .10, -bodyW * .02, bodyH * .24);
-        ctx.fill();
-
-        // body
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, bodyW * .64 * pulse, bodyH * .52 * pulse, 0, 0, TAU);
-        ctx.fill();
-
-        // stripes / patterns
-        ctx.save();
-        ctx.clip();
-        if (f.species === 0) {
-          ctx.strokeStyle = `rgba(${accent[0]}, ${accent[1]}, ${accent[2]}, .75)`;
-          ctx.lineWidth = 2.1;
-          for (let i = -1; i <= 1; i++) {
-            const xx = i * s * .16 + Math.sin(t * 2.2 + i * 1.3 + f.phase) * 1.2;
-            ctx.beginPath();
-            ctx.moveTo(xx, -bodyH * .33);
-            ctx.lineTo(xx + 1, bodyH * .33);
-            ctx.stroke();
-          }
-        } else if (f.species === 1) {
-          ctx.fillStyle = "rgba(255,255,255,.86)";
-          ctx.beginPath();
-          ctx.roundRect(-bodyW * .15, -bodyH * .36, bodyW * .33, bodyH * .72, bodyH * .22);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.roundRect(bodyW * .12, -bodyH * .34, bodyW * .19, bodyH * .68, bodyH * .18);
-          ctx.fill();
-        } else if (f.species === 2) {
-          ctx.globalAlpha = 0.75;
-          ctx.strokeStyle = `rgba(255, 251, 204, .85)`;
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.moveTo(-bodyW * .44, -bodyH * .07);
-          ctx.lineTo(bodyW * .46, bodyH * .07);
-          ctx.stroke();
-        } else {
-          ctx.strokeStyle = `rgba(255,255,255,.7)`;
-          ctx.lineWidth = 2;
-          for (let i = 0; i < 4; i++) {
-            const yy = lerp(-bodyH * .3, bodyH * .3, i / 3);
-            ctx.beginPath();
-            ctx.moveTo(-bodyW * .32, yy);
-            ctx.lineTo(bodyW * .32, yy + Math.sin(t * 2 + i) * 1.3);
-            ctx.stroke();
-          }
-        }
-        ctx.restore();
-
-        // belly glow
-        ctx.save();
-        ctx.globalCompositeOperation = "screen";
-        ctx.fillStyle = `rgba(${accent[0]}, ${accent[1]}, ${accent[2]}, ${0.08 + f.energy * .15})`;
-        ctx.beginPath();
-        ctx.ellipse(bodyW * .04, 0, bodyW * .25, bodyH * .18, 0, 0, TAU);
-        ctx.fill();
-        ctx.restore();
-
-        // eye
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = "rgba(255,255,255,.96)";
-        ctx.beginPath();
-        ctx.arc(eyeX, eyeY, s * .09, 0, TAU);
-        ctx.fill();
-        ctx.fillStyle = "rgba(15, 25, 35, .9)";
-        ctx.beginPath();
-        ctx.arc(eyeX + s * .018, eyeY + s * .012, s * .045, 0, TAU);
-        ctx.fill();
-
-        // highlight line
-        ctx.globalAlpha = .65;
-        ctx.strokeStyle = "rgba(255,255,255,.55)";
-        ctx.lineWidth = 1.1;
-        ctx.beginPath();
-        ctx.moveTo(-bodyW * .2, -bodyH * .18);
-        ctx.quadraticCurveTo(0, -bodyH * .43, bodyW * .24, -bodyH * .14);
-        ctx.stroke();
-
-        ctx.restore();
-      }
-
-      function updateFish(f, dt) {
-        f.age += dt;
-        f.hunger = Math.min(2.2, f.hunger + dt * (0.05 - f.energy * 0.01));
-        f.energy = Math.max(0, f.energy - dt * 0.016);
-        f.pulse += dt;
-
-        let ax = 0, ay = 0;
-
-        // boundary steering
-        const margin = 52;
-        const shallow = 72;
-        if (f.x < margin) ax += (margin - f.x) * 2.2;
-        if (f.x > W - margin) ax -= (f.x - (W - margin)) * 2.2;
-        if (f.y < shallow) ay += (shallow - f.y) * 1.8;
-        if (f.y > H - margin) ay -= (f.y - (H - margin)) * 2.0;
-
-        // current from pointer
-        if (pointer.active) {
-          const dx = pointer.x - f.x;
-          const dy = pointer.y - f.y;
-          const d2 = dx * dx + dy * dy;
-          const r = 220;
-          if (d2 < r * r) {
-            const d = Math.sqrt(d2) + 0.001;
-            const influence = (1 - d / r);
-            ax += pointer.vx * 0.9 * influence;
-            ay += pointer.vy * 0.9 * influence;
-            const swirl = pointer.down ? 240 : 120;
-            ax += (-dy / d) * swirl * influence * 0.18;
-            ay += (dx / d) * swirl * influence * 0.18;
-          }
-        }
-
-        // food attraction
-        let best = null;
-        let bestD2 = 9999999;
-        for (let i = 0; i < world.food.length; i++) {
-          const food = world.food[i];
-          const dx = food.x - f.x;
-          const dy = food.y - f.y;
-          const d2 = dx * dx + dy * dy;
-          if (d2 < bestD2) {
-            bestD2 = d2;
-            best = food;
-          }
-        }
-        if (best && bestD2 < 240 * 240) {
-          const d = Math.sqrt(bestD2) + 0.001;
-          const want = clamp((f.hunger + f.energy * .2) * 0.8, 0.2, 1.2);
-          ax += (best.x - f.x) / d * 58 * want;
-          ay += (best.y - f.y) / d * 58 * want;
-        }
-
-        // flocking
-        let alignX = 0, alignY = 0, cohX = 0, cohY = 0, sepX = 0, sepY = 0;
-        let sameCount = 0;
-        let allCount = 0;
-        for (let i = 0; i < world.fish.length; i++) {
-          const o = world.fish[i];
-          if (o === f) continue;
-          const dx = o.x - f.x;
-          const dy = o.y - f.y;
-          const d2 = dx * dx + dy * dy;
-          if (d2 < 1 || d2 > 9000) continue;
-          const d = Math.sqrt(d2);
-          if (d < 90) {
-            const repel = (90 - d) / 90;
-            sepX -= dx / d * repel * 44;
-            sepY -= dy / d * repel * 44;
-          }
-          allCount++;
-          if (o.species === f.species && d < 150) {
-            alignX += o.vx;
-            alignY += o.vy;
-            cohX += o.x;
-            cohY += o.y;
-            sameCount++;
-          }
-        }
-
-        if (sameCount) {
-          alignX /= sameCount;
-          alignY /= sameCount;
-          cohX /= sameCount;
-          cohY /= sameCount;
-          ax += (alignX - f.vx) * 0.22;
-          ay += (alignY - f.vy) * 0.22;
-          ax += (cohX - f.x) * 0.004;
-          ay += (cohY - f.y) * 0.004;
-        }
-        if (allCount) {
-          ax += sepX * 0.95;
-          ay += sepY * 0.95;
-        }
-
-        // coral avoidance
-        for (let i = 0; i < world.corals.length; i++) {
-          const c = world.corals[i];
-          const dx = f.x - c.x;
-          const dy = f.y - c.y;
-          const d2 = dx * dx + dy * dy;
-          const r = c.radius + f.size * 1.3;
-          if (d2 < r * r) {
-            const d = Math.sqrt(d2) + 0.001;
-            const force = (1 - d / r);
-            ax += dx / d * force * 120;
-            ay += dy / d * force * 120;
-          }
-        }
-
-        // wandering
-        const wander = Math.sin(t * (0.9 + f.species * .12) + f.seed + f.phase) * 18;
-        ax += Math.cos(f.phase + t * 0.8 + f.seed * .2) * 10 + wander * 0.15;
-        ay += Math.sin(f.phase * 1.3 + t * 0.6 + f.seed * .13) * 8;
-
-        // apply
-        f.vx += ax * dt;
-        f.vy += ay * dt;
-
-        // velocity damping and limit
-        const drag = Math.pow(0.85, dt * 60);
-        f.vx *= drag;
-        f.vy *= drag;
-        const max = f.speed * (0.72 + Math.min(1, f.energy));
-        const sp = Math.hypot(f.vx, f.vy);
-        if (sp > max) {
-          f.vx = f.vx / sp * max;
-          f.vy = f.vy / sp * max;
-        }
-
-        f.x += f.vx * dt;
-        f.y += f.vy * dt;
-
-        // keep in bounds softly
-        if (f.x < -80) f.x = W + 80;
-        if (f.x > W + 80) f.x = -80;
-        if (f.y < -60) f.y = H + 60;
-        if (f.y > H + 80) f.y = -80;
-
-        f.angle = Math.atan2(f.vy, f.vx);
-
-        // eating
-        for (let i = world.food.length - 1; i >= 0; i--) {
-          const food = world.food[i];
-          const dx = food.x - f.x;
-          const dy = food.y - f.y;
-          const d2 = dx * dx + dy * dy;
-          if (d2 < (f.size * 1.6 + food.r * 2) * (f.size * 1.6 + food.r * 2)) {
-            world.food.splice(i, 1);
-            f.hunger = Math.max(0, f.hunger - (food.kind ? 0.55 : 0.36));
-            f.energy = Math.min(2.4, f.energy + (food.kind ? 0.42 : 0.28));
-            f.size = clamp(f.size + (food.kind ? 0.16 : 0.11), f.base * .86, f.base * 1.24);
-            spawnSpark(food.x, food.y, food.kind ? [255, 192, 120] : [104, 242, 255], food.kind ? 1.05 : 0.85);
-            for (let b = 0; b < 2; b++) spawnBubble(food.x + rand(-8, 8), food.y + rand(-8, 8), rand(2, 4), rand(-5, 5), rand(24, 45));
-            if (f.energy > 1.6 && world.fish.length < 56 && Math.random() < 0.045) {
-              spawnFish(f.x + rand(-12, 12), f.y + rand(-12, 12), f.species, rand(0.55, 0.78));
-              showToast("A new baby fish appeared!");
+            if (!prompt) {
+                alert('プロンプトを入力してください');
+                return;
             }
-            break;
-          }
-        }
-      }
 
-      function updateFood(food, dt) {
-        food.life -= dt;
-        food.vy += dt * 4;
-        food.x += food.vx * dt;
-        food.y += food.vy * dt;
-        food.vx *= Math.pow(0.96, dt * 60);
-        food.vy *= Math.pow(0.99, dt * 60);
-        if (food.x < 20 || food.x > W - 20) food.vx *= -0.75;
-      }
+            const loading =
+                document.getElementById('loading');
 
-      function updateBubble(b, dt) {
-        b.life -= dt;
-        b.wob += dt * 2.3;
-        b.x += (Math.sin(b.wob) * 18 + b.vx) * dt;
-        b.y -= b.vy * dt;
-        b.r += dt * 0.2;
-      }
+            const image =
+                document.getElementById('resultImage');
 
-      function updateSpark(s, dt) {
-        s.t += dt;
-        s.x += s.vx * dt;
-        s.y += s.vy * dt;
-        s.vx *= Math.pow(0.88, dt * 60);
-        s.vy += 50 * dt;
-      }
+            const downloadButton =
+                document.getElementById('downloadButton');
 
-      function updatePlankton(p, dt) {
-        const drift = Math.sin(t * .3 + p.x * .01) * p.v * .1;
-        p.x += (p.z * 4 + drift) * dt;
-        p.y += Math.sin(t * 0.5 + p.y * .005) * p.z * .18 * dt;
-        if (p.x > W + 10) p.x = -10;
-        if (p.x < -10) p.x = W + 10;
-        if (p.y > H + 10) p.y = -10;
-        if (p.y < -10) p.y = H + 10;
-      }
+            loading.style.display = 'block';
 
-      function updateJelly(j, dt) {
-        j.x += Math.sin(t * 0.2 + j.phase) * dt * 10 + (j.drift * 8 - 4) * dt;
-        j.y += Math.cos(t * 0.17 + j.phase) * dt * 4 + Math.sin(j.phase + t * 0.13) * dt * 2;
-        if (j.x < -80) j.x = W + 80;
-        if (j.x > W + 80) j.x = -80;
-        if (j.y < 60) j.y = 60;
-        if (j.y > H * 0.72) j.y = H * 0.72;
-      }
+            image.style.display = 'none';
 
-      function updateVent(v, dt) {
-        v.phase += dt * (1 + v.rate * 0.2);
-        if (Math.sin(v.phase * 1.7 + t * 1.2) > 0.93) {
-          spawnBubble(v.x + rand(-10, 10), H - 16, rand(2, 5), rand(-10, 10), rand(30, 80), true);
-          if (biolume && Math.random() < 0.35) {
-            spawnSpark(v.x + rand(-12, 12), H - 18, [104, 242, 255], 0.45);
-          }
-        }
-      }
+            downloadButton.style.display = 'none';
 
-      function render() {
-        requestAnimationFrame(render);
-        const n = performance.now();
-        let dt = (n - last) / 1000;
-        last = n;
-        dt = Math.min(dt, 0.033);
-        if (paused) dt = 0;
+            try {
 
-        if (!paused) t += dt;
+                // ====================================
+                // Azure Function URL
+                // ====================================
 
-        frameCounter++;
-        if (frameCounter % 15 === 0) {
-          fps = Math.round(1 / Math.max(0.0001, dt || 0.016));
-        }
+                const functionUrl =
+                    'https://testhttp-f6ehaqhvh3hvezcc.eastus2-01.azurewebsites.net/api/HttpTrigger2?code=Q43TchR9GqnMB4AzpSZA3605tRRbz0TXsz5MVj9Gw9oOAzFuuSAhOg==';
 
-        const day = (Math.sin(t * 0.035 - Math.PI * 0.15) + 1) * 0.5;
-        const night = 1 - day;
-        const amp = Math.min(1, Math.hypot(pointer.vx, pointer.vy) / 24);
+                // ====================================
+                // API CALL
+                // ====================================
 
-        drawBackground(day, night, amp);
+                const response = await fetch(functionUrl, {
 
-        // ambient particles / plankton
-        ctx.save();
-        ctx.globalCompositeOperation = "screen";
-        for (const p of world.plankton) {
-          updatePlankton(p, dt);
-          const tw = 0.32 + Math.sin(t * 2 + p.x * 0.01) * 0.25;
-          ctx.fillStyle = `hsla(${p.hue}, 100%, ${70 + p.z * 12}%, ${p.a * (0.55 + day * .42)})`;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.r * (0.85 + tw), 0, TAU);
-          ctx.fill();
-        }
-        ctx.restore();
+                    method: 'POST',
 
-        // update bubble streams / vents
-        for (const vent of world.vents) updateVent(vent, dt);
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
 
-        // subtle currents / wave particles near the surface
-        if (!paused) {
-          if (Math.random() < 0.05) {
-            const x = rand(20, W - 20);
-            world.waves.push({ x, y: rand(H * 0.08, H * 0.22), r: 0, life: rand(1.2, 2.2), alpha: rand(.04, .12) });
-          }
+                    body: JSON.stringify({
+                        prompt: prompt
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(
+                        'HTTP Error: ' + response.status
+                    );
+                }
+
+                // ====================================
+                // IMAGE BLOB
+                // ====================================
+
+                const blob = await response.blob();
+
+                const imageUrl =
+                    URL.createObjectURL(blob);
+
+                // ====================================
+                // IMAGE DISPLAY
+                // ====================================
+
+                image.src = imageUrl;
+
+                image.style.display = 'block';
+
+                // ====================================
+                // DOWNLOAD BUTTON
+                // ====================================
+
+                downloadButton.href = imageUrl;
+
+                downloadButton.style.display = 'inline-block';
+
+            }
+            catch (error) {
+
+                console.error(error);
+
+                alert(
+                    'エラーが発生しました: ' +
+                    error.message
+                );
+            }
+            finally {
+
+                loading.style.display = 'none';
+            }
         }
 
-        // draw jellies behind fish
-        for (const j of world.jellies) {
-          if (!paused) updateJelly(j, dt);
-          drawJelly(j);
-        }
+    </script>
 
-        // corals and reef
-        world.corals.sort((a, b) => a.x - b.x);
-        for (const c of world.corals) drawCoral(c);
-
-        // bubble streams from bottom
-        if (!paused && Math.random() < 0.35) {
-          const vent = world.vents[(Math.random() * world.vents.length) | 0];
-          if (vent) {
-            if (Math.random() < 0.4) spawnBubble(vent.x + rand(-18, 18), H - 12, rand(2, 6), rand(-10, 10), rand(28, 70), true);
-          }
-        }
-
-        // update fish before drawing
-        if (!paused) {
-          for (const f of world.fish) updateFish(f, dt);
-          for (let i = world.food.length - 1; i >= 0; i--) {
-            updateFood(world.food[i], dt);
-            if (world.food[i].life <= 0 || world.food[i].y > H + 60) world.food.splice(i, 1);
-          }
-          for (let i = world.bubbles.length - 1; i >= 0; i--) {
-            updateBubble(world.bubbles[i], dt);
-            if (world.bubbles[i].life <= 0 || world.bubbles[i].y < -40) world.bubbles.splice(i, 1);
-          }
-          for (let i = world.sparks.length - 1; i >= 0; i--) {
-            updateSpark(world.sparks[i], dt);
-            if (world.sparks[i].t >= world.sparks[i].life) world.sparks.splice(i, 1);
-          }
-          for (let i = world.waves.length - 1; i >= 0; i--) {
-            world.waves[i].r += dt * 220;
-            world.waves[i].life -= dt;
-            world.waves[i].alpha *= Math.pow(.92, dt * 60);
-            if (world.waves[i].life <= 0) world.waves.splice(i, 1);
-          }
-        }
-
-        // glow haze / waves
-        ctx.save();
-        ctx.globalCompositeOperation = "screen";
-        if (biolume) {
-          for (const wave of world.waves) {
-            ctx.strokeStyle = `rgba(104, 242, 255, ${wave.alpha})`;
-            ctx.lineWidth = 2.2;
-            ctx.beginPath();
-            ctx.ellipse(wave.x, wave.y, wave.r * 0.75, wave.r * 0.22, 0, 0, TAU);
-            ctx.stroke();
-          }
-        }
-        ctx.restore();
-
-        // food before fish for depth
-        for (const food of world.food) drawFood(food);
-
-        // fish in depth order
-        const depthSort = world.fish.slice().sort((a, b) => (a.y + a.size) - (b.y + b.size));
-        for (const f of depthSort) {
-          drawFish(f);
-        }
-
-        // bubbles atop everything
-        for (const b of world.bubbles) drawBubble(b);
-
-        // sparkles
-        for (const s of world.sparks) drawSpark(s);
-
-        // top foam line
-        ctx.save();
-        ctx.globalCompositeOperation = "screen";
-        ctx.strokeStyle = "rgba(245,255,255,.26)";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        for (let x = -20; x <= W + 20; x += 20) {
-          const y = H * 0.08 + Math.sin(x * 0.02 + t * 1.4) * 3.5 + Math.cos(x * 0.04 - t) * 1.2;
-          if (x === -20) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-        ctx.restore();
-
-        // mouse aura
-        if (!cinema) {
-          ctx.save();
-          ctx.globalCompositeOperation = "screen";
-          const rg = ctx.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, 160);
-          rg.addColorStop(0, `rgba(104,242,255,${pointer.active ? .18 : .06})`);
-          rg.addColorStop(0.5, `rgba(157,107,255,${pointer.active ? .10 : .03})`);
-          rg.addColorStop(1, "rgba(0,0,0,0)");
-          ctx.fillStyle = rg;
-          ctx.beginPath();
-          ctx.arc(pointer.x, pointer.y, 160, 0, TAU);
-          ctx.fill();
-          ctx.restore();
-        }
-
-        // UI stats
-        world.mood = currentMood();
-        statFish.textContent = world.fish.length;
-        statFood.textContent = world.food.length;
-        statCoral.textContent = world.corals.length;
-        statMood.textContent = world.mood;
-        statTime.textContent = timeLabel(day);
-
-        if (!paused) {
-          setBadge(`${currentTool.toUpperCase()} • FPS ${fps} • ${cinema ? "Cinema" : "Live"}`);
-        } else {
-          setBadge(`PAUSED • ${currentTool.toUpperCase()} • FPS ${fps}`);
-        }
-      }
-
-      // input
-      function canvasPos(e) {
-        const rect = canvas.getBoundingClientRect();
-        return {
-          x: (e.clientX - rect.left),
-          y: (e.clientY - rect.top)
-        };
-      }
-
-      function applyTool(x, y) {
-        if (currentTool === "feed") {
-          spawnFood(x, y, Math.floor(rand(9, 15)));
-          for (let i = 0; i < 2; i++) spawnBubble(x + rand(-14, 14), y + rand(-10, 10), rand(2, 4), rand(-8, 8), rand(18, 30));
-          spawnSpark(x, y, [255, 215, 145], 0.45);
-          showToast("Feeding the aquarium.");
-        } else if (currentTool === "fish") {
-          const n = Math.floor(rand(1, 4));
-          for (let i = 0; i < n; i++) spawnFish(x + rand(-36, 36), y + rand(-22, 22), Math.floor(rand(4)), rand(.7, 1.2));
-          spawnSpark(x, y, [104, 242, 255], 0.7);
-          showToast(`${n} fish released.`);
-        } else if (currentTool === "coral") {
-          spawnCoral(x, clamp(y, H * .58, H - 18), false);
-          spawnBubble(x, y, rand(3, 7), rand(-6, 6), rand(20, 34));
-          spawnSpark(x, y, [255, 122, 186], 0.6);
-          showToast("A coral structure grows.");
-        }
-      }
-
-      canvas.addEventListener("pointerdown", (e) => {
-        const p = canvasPos(e);
-        pointer.active = true;
-        pointer.down = true;
-        pointer.px = pointer.x = p.x;
-        pointer.py = pointer.y = p.y;
-        pointer.vx = pointer.vy = 0;
-        pointer.pressure = e.pressure || 0.5;
-        canvas.setPointerCapture?.(e.pointerId);
-        applyTool(p.x, p.y);
-      });
-
-      canvas.addEventListener("pointermove", (e) => {
-        const p = canvasPos(e);
-        pointer.active = true;
-        pointer.moved = true;
-        pointer.vx = p.x - pointer.x;
-        pointer.vy = p.y - pointer.y;
-        pointer.px = pointer.x;
-        pointer.py = pointer.y;
-        pointer.x = p.x;
-        pointer.y = p.y;
-        if (pointer.down) {
-          // paint current and bubbles while dragging
-          const speed = Math.hypot(pointer.vx, pointer.vy);
-          if (speed > 0.3) {
-            spawnBubble(p.x, p.y, clamp(speed * 0.06, 2, 7), pointer.vx * 0.8, 24 + speed * 0.22, true);
-            if (Math.random() < 0.35) spawnSpark(p.x, p.y, [104, 242, 255], clamp(speed / 24, .3, 1));
-          }
-        }
-      });
-
-      function endPointer() {
-        pointer.down = false;
-        pointer.pressure = 0;
-      }
-      canvas.addEventListener("pointerup", endPointer);
-      canvas.addEventListener("pointercancel", endPointer);
-      canvas.addEventListener("pointerleave", () => { pointer.active = false; endPointer(); });
-
-      // buttons
-      btnFeed.addEventListener("click", () => setTool("feed"));
-      btnFish.addEventListener("click", () => setTool("fish"));
-      btnCoral.addEventListener("click", () => setTool("coral"));
-      btnReset.addEventListener("click", resetWorld);
-      btnCinema.addEventListener("click", () => toggleCinema());
-      btnWave.addEventListener("click", () => {
-        const x = pointer.active ? pointer.x : W * 0.5;
-        const y = pointer.active ? pointer.y : H * 0.45;
-        for (let i = 0; i < 5; i++) {
-          world.waves.push({ x: x + rand(-20, 20), y: y + rand(-20, 20), r: 10, life: rand(1.0, 1.8), alpha: rand(.08, .18) });
-        }
-        spawnSpark(x, y, [104, 242, 255], 1.1);
-        spawnFood(x, y, 6);
-        showToast("Current burst released.");
-      });
-      btnHaze.addEventListener("click", () => toggleHaze());
-
-      window.addEventListener("keydown", (e) => {
-        if (e.key === "1") setTool("feed");
-        else if (e.key === "2") setTool("fish");
-        else if (e.key === "3") setTool("coral");
-        else if (e.key === "c" || e.key === "C") toggleCinema();
-        else if (e.key === "h" || e.key === "H") toggleHaze();
-        else if (e.key === "r" || e.key === "R") resetWorld();
-        else if (e.key === " ") { paused = !paused; showToast(paused ? "Paused." : "Resumed."); }
-        else if (e.key === "v" || e.key === "V") btnWave.click();
-        else if (e.key === "Escape") {
-          cinema = false;
-          document.body.classList.remove("cinema");
-          btnCinema.classList.remove("active");
-        }
-      });
-
-      // gentle idle feeding / breathing
-      setInterval(() => {
-        if (!paused && world.food.length < 4 && world.fish.length > 0 && Math.random() < 0.25) {
-          spawnFood(rand(W * 0.28, W * 0.72), rand(H * 0.16, H * 0.4), Math.floor(rand(2, 6)));
-        }
-        if (!paused && Math.random() < 0.12 && world.bubbles.length < 100) {
-          const vent = world.vents[(Math.random() * world.vents.length) | 0];
-          if (vent) spawnBubble(vent.x + rand(-10, 10), H - 10, rand(2, 5), rand(-4, 4), rand(26, 50), true);
-        }
-      }, 900);
-
-      window.addEventListener("resize", resize);
-
-      // initial setup
-      resize();
-      setTool("feed");
-      btnHaze.classList.toggle("active", biolume);
-      showToast("Welcome to the living aquarium.");
-      render();
-    })();
-  </script>
 </body>
 </html>
