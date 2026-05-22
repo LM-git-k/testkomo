@@ -3,314 +3,416 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>財務ダッシュボード ジェネレーター</title>
+    <title>AI財務ダッシュボード ジェネレーター</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
 
     <style>
-        /* ================================================
+        /* ============================================
            CSS VARIABLES
-        ================================================ */
+        ============================================ */
         :root {
-            --bg-base:      #070b14;
-            --bg-surface:   #0e1525;
-            --bg-card:      #131c30;
-            --bg-input:     #0a1020;
-            --border:       #1e2d4a;
-            --border-light: #2a3d60;
-            --gold:         #c9a84c;
-            --gold-dim:     #8a6e30;
-            --gold-glow:    rgba(201,168,76,0.15);
-            --blue:         #3d8bff;
-            --blue-dim:     #1a5acc;
-            --text-primary: #e2e8f0;
-            --text-secondary:#8ea3c3;
-            --text-muted:   #4a6080;
-            --success:      #2dd4a0;
-            --danger:       #ff4d6a;
-            --mono:         'Space Mono', monospace;
-            --sans:         'Noto Sans JP', sans-serif;
+            --bg:           #fdf8f0;
+            --bg2:          #f5efe3;
+            --white:        #ffffff;
+            --coral:        #ff6b4a;
+            --coral-lt:     #fff0ed;
+            --coral-mid:    #ffcfc6;
+            --sky:          #0099e6;
+            --sky-lt:       #e3f4ff;
+            --sky-mid:      #9dd8f7;
+            --mint:         #00c896;
+            --mint-lt:      #e0faf3;
+            --amber:        #f5a623;
+            --amber-lt:     #fff8e6;
+            --purple:       #8b5cf6;
+            --purple-lt:    #f3effe;
+            --ink:          #1a1630;
+            --ink-mid:      #4a4568;
+            --ink-soft:     #8a87a0;
+            --border:       #e8e2d8;
+            --border2:      #d4ccbe;
+            --shadow-sm:    0 2px 8px rgba(26,22,48,0.08);
+            --shadow-md:    0 6px 24px rgba(26,22,48,0.10);
+            --shadow-lg:    0 12px 40px rgba(26,22,48,0.14);
+            --radius-sm:    10px;
+            --radius-md:    16px;
+            --radius-lg:    24px;
+            --nunito:       'Nunito', sans-serif;
+            --noto:         'Noto Sans JP', sans-serif;
         }
 
-        /* ================================================
+        /* ============================================
            RESET & BASE
-        ================================================ */
+        ============================================ */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        html { scroll-behavior: smooth; }
-
         body {
-            font-family: var(--sans);
-            background: var(--bg-base);
-            color: var(--text-primary);
+            font-family: var(--noto);
+            background: var(--bg);
+            color: var(--ink);
             min-height: 100vh;
-            line-height: 1.6;
             overflow-x: hidden;
         }
 
-        /* grid noise texture overlay */
-        body::before {
+        /* decorative blobs */
+        body::before, body::after {
             content: '';
             position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
+            border-radius: 50%;
             pointer-events: none;
             z-index: 0;
         }
+        body::before {
+            width: 600px; height: 600px;
+            top: -200px; right: -200px;
+            background: radial-gradient(circle, rgba(255,107,74,0.12) 0%, transparent 65%);
+        }
+        body::after {
+            width: 500px; height: 500px;
+            bottom: -150px; left: -150px;
+            background: radial-gradient(circle, rgba(0,153,230,0.10) 0%, transparent 65%);
+        }
 
-        /* ================================================
+        /* ============================================
            LAYOUT
-        ================================================ */
+        ============================================ */
         .wrapper {
             position: relative;
             z-index: 1;
-            max-width: 960px;
+            max-width: 980px;
             margin: 0 auto;
-            padding: 40px 24px 80px;
+            padding: 36px 24px 100px;
         }
 
-        /* ================================================
+        /* ============================================
            HEADER
-        ================================================ */
+        ============================================ */
         .header {
-            margin-bottom: 40px;
-            animation: fadeDown 0.6s ease both;
+            margin-bottom: 36px;
+            animation: popUp 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
         }
 
-        .header-eyebrow {
-            font-family: var(--mono);
-            font-size: 11px;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: var(--gold);
-            margin-bottom: 10px;
-            display: flex;
+        .header-badge {
+            display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 6px;
+            background: var(--coral-lt);
+            color: var(--coral);
+            font-family: var(--nunito);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 5px 14px;
+            border-radius: 100px;
+            margin-bottom: 14px;
         }
-
-        .header-eyebrow::before {
-            content: '';
-            display: block;
-            width: 28px;
-            height: 1px;
-            background: var(--gold);
+        .header-badge .dot {
+            width: 7px; height: 7px;
+            background: var(--coral);
+            border-radius: 50%;
+            animation: pulse 2s ease infinite;
         }
 
         .header h1 {
-            font-size: clamp(22px, 4vw, 32px);
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            color: var(--text-primary);
-            line-height: 1.2;
+            font-family: var(--nunito);
+            font-size: clamp(24px, 4.5vw, 38px);
+            font-weight: 900;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+            color: var(--ink);
         }
 
-        .header h1 span {
-            color: var(--gold);
-        }
+        .header h1 .accent { color: var(--coral); }
 
         .header-sub {
             margin-top: 10px;
-            font-size: 13px;
-            color: var(--text-secondary);
-            font-weight: 300;
+            font-size: 14px;
+            color: var(--ink-soft);
+            font-weight: 400;
         }
 
-        /* ================================================
-           CARD
-        ================================================ */
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 28px;
-            margin-bottom: 24px;
-            animation: fadeUp 0.6s ease both;
+        /* ============================================
+           COMPANY NAME FIELD
+        ============================================ */
+        .company-field {
+            background: var(--white);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 22px 26px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            animation: popUp 0.5s cubic-bezier(0.34,1.56,0.64,1) both 0.05s;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .company-field:focus-within {
+            border-color: var(--coral);
+            box-shadow: 0 0 0 4px rgba(255,107,74,0.12), var(--shadow-sm);
         }
 
-        .card-title {
-            font-family: var(--mono);
+        .company-icon {
+            width: 44px; height: 44px;
+            background: linear-gradient(135deg, var(--coral), #ff9a4a);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .company-field-inner { flex: 1; }
+
+        .company-label {
+            font-family: var(--nunito);
             font-size: 11px;
-            letter-spacing: 0.18em;
+            font-weight: 800;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
-            color: var(--text-muted);
-            margin-bottom: 18px;
+            color: var(--ink-soft);
+            display: block;
+            margin-bottom: 4px;
         }
 
-        /* ================================================
+        .company-input {
+            width: 100%;
+            background: none;
+            border: none;
+            font-family: var(--noto);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ink);
+            outline: none;
+        }
+        .company-input::placeholder { color: var(--ink-soft); font-weight: 400; font-size: 16px; }
+
+        /* ============================================
+           CARD
+        ============================================ */
+        .card {
+            background: var(--white);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+            animation: popUp 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+            transition: box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: var(--shadow-md); }
+
+        /* ============================================
            TABS
-        ================================================ */
+        ============================================ */
         .tab-bar {
             display: flex;
-            gap: 0;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 28px;
-            animation: fadeUp 0.5s ease both 0.1s;
+            gap: 8px;
+            background: var(--bg2);
+            border-radius: 100px;
+            padding: 5px;
+            margin-bottom: 26px;
+            width: fit-content;
         }
 
         .tab-btn {
-            position: relative;
             background: none;
             border: none;
-            padding: 14px 22px;
-            font-family: var(--sans);
+            padding: 9px 22px;
+            font-family: var(--nunito);
             font-size: 13px;
-            font-weight: 500;
-            color: var(--text-muted);
+            font-weight: 700;
+            color: var(--ink-soft);
             cursor: pointer;
-            transition: color 0.2s;
-            letter-spacing: 0.02em;
-        }
-
-        .tab-btn::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--gold);
-            transform: scaleX(0);
-            transition: transform 0.25s ease;
+            border-radius: 100px;
+            transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+            white-space: nowrap;
         }
 
         .tab-btn.active {
-            color: var(--gold);
+            background: var(--white);
+            color: var(--coral);
+            box-shadow: var(--shadow-sm);
+            transform: scale(1.02);
         }
 
-        .tab-btn.active::after {
-            transform: scaleX(1);
+        .tab-btn:hover:not(.active) { color: var(--ink-mid); }
+
+        .tab-pane { display: none; animation: fadeSlide 0.25s ease; }
+        .tab-pane.active { display: block; }
+
+        /* ============================================
+           SAMPLE BUTTON STRIP
+        ============================================ */
+        .sample-strip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
         }
 
-        .tab-btn:hover:not(.active) {
-            color: var(--text-secondary);
+        .sample-label {
+            font-family: var(--nunito);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
         }
 
-        .tab-pane {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .tab-pane.active {
-            display: block;
-        }
-
-        /* ================================================
-           TEXTAREA
-        ================================================ */
-        .field-label {
-            display: block;
+        .btn-sample {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--amber-lt);
+            border: 1.5px solid #f5c66050;
+            color: #b87b00;
+            font-family: var(--nunito);
             font-size: 12px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            letter-spacing: 0.05em;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
         }
+        .btn-sample:hover {
+            background: #f5a623;
+            color: #fff;
+            border-color: #f5a623;
+            transform: scale(1.05);
+        }
+        .btn-sample:active { transform: scale(0.97); }
+
+        /* ============================================
+           TEXTAREA
+        ============================================ */
+        .field-group { margin-bottom: 16px; }
+
+        .field-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-family: var(--nunito);
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--ink-mid);
+            margin-bottom: 8px;
+        }
+
+        .field-label .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .dot-coral { background: var(--coral); }
+        .dot-sky   { background: var(--sky); }
+        .dot-mint  { background: var(--mint); }
 
         .field-hint {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 4px;
+            font-size: 11.5px;
+            color: var(--ink-soft);
+            margin-top: 5px;
+            line-height: 1.6;
         }
 
         textarea {
             width: 100%;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-family: var(--mono);
-            font-size: 12px;
-            line-height: 1.7;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--ink);
+            font-family: 'Noto Sans JP', monospace;
+            font-size: 12.5px;
+            line-height: 1.75;
             padding: 14px;
             resize: vertical;
-            transition: border-color 0.2s, box-shadow 0.2s;
             outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-
         textarea::placeholder {
-            color: var(--text-muted);
-            font-family: var(--sans);
+            color: var(--ink-soft);
             font-size: 12px;
         }
-
         textarea:focus {
-            border-color: var(--gold-dim);
-            box-shadow: 0 0 0 3px var(--gold-glow);
+            border-color: var(--sky);
+            box-shadow: 0 0 0 4px rgba(0,153,230,0.10);
+            background: var(--white);
         }
 
-        /* ================================================
-           INDIVIDUAL TAB - YEAR BLOCKS
-        ================================================ */
+        /* ============================================
+           INDIVIDUAL TAB — YEAR BLOCKS
+        ============================================ */
         .year-block {
-            border: 1px solid var(--border);
-            border-radius: 8px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
             padding: 20px;
             margin-bottom: 16px;
-            background: var(--bg-surface);
+            background: #fcfaf7;
             position: relative;
-            animation: fadeIn 0.3s ease;
+            animation: popUp 0.35s cubic-bezier(0.34,1.56,0.64,1);
+            transition: border-color 0.2s;
         }
+        .year-block:hover { border-color: var(--border2); }
 
         .year-block-header {
             display: flex;
             align-items: center;
-            gap: 14px;
-            margin-bottom: 18px;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
         }
 
-        .year-badge {
-            font-family: var(--mono);
+        .year-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--sky-lt);
+            color: var(--sky);
+            font-family: var(--nunito);
             font-size: 11px;
-            color: var(--gold);
-            background: rgba(201,168,76,0.1);
-            border: 1px solid var(--gold-dim);
-            padding: 3px 10px;
-            border-radius: 4px;
-            letter-spacing: 0.1em;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            border-radius: 100px;
+            border: 1.5px solid var(--sky-mid);
             white-space: nowrap;
         }
 
         .year-input {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-family: var(--mono);
-            font-size: 13px;
-            padding: 6px 12px;
-            width: 120px;
+            background: var(--white);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--ink);
+            font-family: var(--nunito);
+            font-size: 15px;
+            font-weight: 700;
+            padding: 6px 14px;
+            width: 110px;
             outline: none;
             transition: border-color 0.2s;
         }
-
-        .year-input:focus {
-            border-color: var(--gold-dim);
-        }
+        .year-input:focus { border-color: var(--sky); }
 
         .remove-year-btn {
             margin-left: auto;
-            background: none;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            border-radius: 4px;
-            width: 28px;
-            height: 28px;
+            background: var(--bg2);
+            border: 2px solid var(--border);
+            color: var(--ink-soft);
+            border-radius: 8px;
+            width: 32px; height: 32px;
             cursor: pointer;
             font-size: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            line-height: 1;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+            flex-shrink: 0;
         }
-
         .remove-year-btn:hover {
-            border-color: var(--danger);
-            color: var(--danger);
+            background: #fff0ed;
+            border-color: var(--coral);
+            color: var(--coral);
+            transform: rotate(10deg) scale(1.1);
         }
 
         .statement-grid {
@@ -318,354 +420,376 @@
             grid-template-columns: 1fr 1fr 1fr;
             gap: 14px;
         }
+        @media (max-width: 680px) { .statement-grid { grid-template-columns: 1fr; } }
 
-        @media (max-width: 680px) {
-            .statement-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .statement-block {}
-
-        .statement-tag {
-            display: inline-block;
-            font-family: var(--mono);
-            font-size: 10px;
-            letter-spacing: 0.12em;
-            padding: 2px 8px;
-            border-radius: 3px;
+        .stmt-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-family: var(--nunito);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.07em;
+            padding: 3px 10px;
+            border-radius: 100px;
             margin-bottom: 8px;
         }
-
-        .tag-pl { background: rgba(61,139,255,0.15); color: var(--blue); border: 1px solid rgba(61,139,255,0.3); }
-        .tag-bs { background: rgba(201,168,76,0.12); color: var(--gold); border: 1px solid rgba(201,168,76,0.25); }
-        .tag-cf { background: rgba(45,212,160,0.12); color: var(--success); border: 1px solid rgba(45,212,160,0.3); }
+        .stmt-tag .dot { width: 6px; height: 6px; border-radius: 50%; }
+        .tag-pl { background: var(--sky-lt);    color: var(--sky);    border: 1.5px solid var(--sky-mid);  }
+        .tag-bs { background: var(--amber-lt);  color: #b87b00;       border: 1.5px solid #f5c66080; }
+        .tag-cf { background: var(--mint-lt);   color: #007d5e;       border: 1.5px solid #00c89680; }
 
         .add-year-btn {
             width: 100%;
             background: none;
-            border: 1px dashed var(--border-light);
-            border-radius: 8px;
-            color: var(--text-secondary);
-            font-family: var(--sans);
+            border: 2px dashed var(--border2);
+            border-radius: var(--radius-md);
+            color: var(--ink-soft);
+            font-family: var(--nunito);
             font-size: 13px;
+            font-weight: 700;
             padding: 14px;
             cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 4px;
+            transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
         }
-
         .add-year-btn:hover {
-            border-color: var(--gold-dim);
-            color: var(--gold);
-            background: var(--gold-glow);
+            border-color: var(--sky);
+            color: var(--sky);
+            background: var(--sky-lt);
+            transform: scale(1.01);
         }
 
-        /* ================================================
+        /* ============================================
            GENERATE BUTTON
-        ================================================ */
-        .generate-section {
+        ============================================ */
+        .generate-card {
+            background: linear-gradient(135deg, #fff7f5 0%, #f0f8ff 100%);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-bottom: 20px;
+            animation: popUp 0.5s cubic-bezier(0.34,1.56,0.64,1) both 0.2s;
+        }
+
+        .generate-row {
             display: flex;
             align-items: center;
             gap: 16px;
-            margin-top: 8px;
             flex-wrap: wrap;
         }
 
         .btn-generate {
             position: relative;
-            background: linear-gradient(135deg, #b8922a, #e6c055);
+            background: linear-gradient(135deg, var(--coral), #ff9a4a);
             border: none;
-            border-radius: 6px;
-            color: #0a0e14;
-            font-family: var(--sans);
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            padding: 14px 32px;
+            border-radius: 100px;
+            color: #fff;
+            font-family: var(--nunito);
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: 0.03em;
+            padding: 16px 36px;
             cursor: pointer;
-            transition: all 0.2s;
+            box-shadow: 0 6px 20px rgba(255,107,74,0.40);
+            transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
             overflow: hidden;
         }
-
-        .btn-generate::before {
+        .btn-generate:hover {
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 10px 28px rgba(255,107,74,0.50);
+        }
+        .btn-generate:active { transform: scale(0.97); }
+        .btn-generate:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-generate::after {
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, #e6c055, #b8922a);
+            background: linear-gradient(135deg, #ff9a4a, var(--coral));
             opacity: 0;
             transition: opacity 0.2s;
         }
+        .btn-generate:hover::after { opacity: 1; }
+        .btn-generate span { position: relative; z-index: 1; }
 
-        .btn-generate:hover::before { opacity: 1; }
-        .btn-generate:active { transform: scale(0.98); }
-        .btn-generate:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-generate span { position: relative; }
-
-        .status-text {
-            font-family: var(--mono);
+        .status-badge {
+            font-family: var(--nunito);
             font-size: 12px;
-            color: var(--text-muted);
+            font-weight: 700;
+            color: var(--ink-soft);
+            background: var(--bg2);
+            padding: 6px 14px;
+            border-radius: 100px;
+            border: 1.5px solid var(--border);
         }
 
-        /* ================================================
-           LOADING
-        ================================================ */
-        .loading-area {
-            display: none;
-            margin-top: 24px;
-            padding: 24px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-surface);
+        /* ============================================
+           PROMPT PREVIEW
+        ============================================ */
+        .prompt-section {
+            margin-top: 20px;
+            border-top: 2px dashed var(--border);
+            padding-top: 18px;
         }
 
-        .loading-inner {
+        .prompt-toggle {
+            background: none;
+            border: none;
+            font-family: var(--nunito);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--ink-soft);
+            cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 6px;
+            transition: color 0.2s;
+            letter-spacing: 0.05em;
+        }
+        .prompt-toggle:hover { color: var(--sky); }
+
+        .prompt-toggle .arrow {
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+        .prompt-toggle.open .arrow { transform: rotate(90deg); }
+
+        .prompt-body {
+            display: none;
+            margin-top: 12px;
+            background: var(--bg2);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            font-family: 'Noto Sans JP', monospace;
+            font-size: 11.5px;
+            color: var(--ink-mid);
+            line-height: 1.9;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .prompt-body.open { display: block; }
+
+        /* ============================================
+           LOADING
+        ============================================ */
+        .loading-area {
+            display: none;
+            margin-top: 22px;
+            background: linear-gradient(135deg, var(--sky-lt), var(--mint-lt));
+            border: 2px solid var(--sky-mid);
+            border-radius: var(--radius-md);
+            padding: 22px 24px;
         }
 
-        .spinner {
-            width: 32px;
-            height: 32px;
-            border: 2px solid var(--border);
-            border-top-color: var(--gold);
-            border-radius: 50%;
-            animation: spin 0.9s linear infinite;
+        .loading-inner { display: flex; align-items: center; gap: 16px; }
+
+        .spinner-wrap {
+            position: relative;
+            width: 42px; height: 42px;
             flex-shrink: 0;
+        }
+        .spinner {
+            width: 42px; height: 42px;
+            border: 3px solid var(--sky-mid);
+            border-top-color: var(--sky);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
 
         .loading-text {
-            font-size: 13px;
-            color: var(--text-secondary);
+            font-family: var(--nunito);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--sky);
         }
-
         .loading-sub {
-            font-size: 11px;
-            color: var(--text-muted);
+            font-size: 12px;
+            color: var(--ink-soft);
             margin-top: 3px;
-            font-family: var(--mono);
         }
 
-        /* progress bar */
-        .progress-bar-wrap {
-            height: 2px;
-            background: var(--border);
-            border-radius: 2px;
-            margin-top: 16px;
+        .progress-wrap {
+            height: 6px;
+            background: rgba(0,153,230,0.15);
+            border-radius: 100px;
+            margin-top: 14px;
             overflow: hidden;
         }
-
         .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, var(--gold-dim), var(--gold));
-            border-radius: 2px;
+            background: linear-gradient(90deg, var(--sky), var(--mint));
+            border-radius: 100px;
             animation: progress 120s linear both;
-            width: 0%;
         }
 
-        /* ================================================
+        /* ============================================
            RESULT
-        ================================================ */
+        ============================================ */
         .result-area {
             display: none;
-            margin-top: 24px;
-            animation: fadeUp 0.5s ease;
+            margin-top: 22px;
+            animation: popUp 0.5s cubic-bezier(0.34,1.56,0.64,1);
         }
 
         .result-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             flex-wrap: wrap;
             gap: 10px;
         }
 
-        .result-label {
-            font-family: var(--mono);
-            font-size: 11px;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: var(--success);
-            display: flex;
+        .result-badge {
+            display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 7px;
+            background: var(--mint-lt);
+            color: #007d5e;
+            font-family: var(--nunito);
+            font-size: 12px;
+            font-weight: 800;
+            padding: 6px 14px;
+            border-radius: 100px;
+            border: 1.5px solid rgba(0,200,150,0.4);
         }
-
-        .result-label::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            background: var(--success);
+        .result-badge .dot {
+            width: 7px; height: 7px;
+            background: var(--mint);
             border-radius: 50%;
-            animation: pulse 2s ease infinite;
+            animation: pulse 1.5s ease infinite;
         }
 
         .btn-download {
-            background: none;
-            border: 1px solid var(--border-light);
-            border-radius: 6px;
-            color: var(--text-secondary);
-            font-family: var(--sans);
-            font-size: 12px;
-            font-weight: 500;
-            padding: 8px 18px;
-            cursor: pointer;
-            text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
-
-        .btn-download:hover {
-            border-color: var(--gold-dim);
-            color: var(--gold);
-        }
-
-        .result-image-wrap {
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            overflow: hidden;
-            background: #000;
-        }
-
-        .result-image-wrap img {
-            width: 100%;
-            display: block;
-        }
-
-        /* ================================================
-           PROMPT PREVIEW
-        ================================================ */
-        .prompt-preview {
-            margin-top: 20px;
-            border-top: 1px solid var(--border);
-            padding-top: 20px;
-        }
-
-        .prompt-preview-toggle {
-            background: none;
+            gap: 7px;
+            background: var(--ink);
             border: none;
-            font-family: var(--mono);
-            font-size: 11px;
-            color: var(--text-muted);
+            border-radius: 100px;
+            color: #fff;
+            font-family: var(--nunito);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 10px 22px;
+            text-decoration: none;
             cursor: pointer;
-            letter-spacing: 0.1em;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: color 0.2s;
+            transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .btn-download:hover {
+            transform: translateY(-1px) scale(1.04);
+            box-shadow: 0 6px 18px rgba(26,22,48,0.3);
         }
 
-        .prompt-preview-toggle:hover { color: var(--text-secondary); }
-
-        .prompt-preview-toggle .arrow {
-            transition: transform 0.2s;
+        .result-img-wrap {
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
         }
+        .result-img-wrap img { width: 100%; display: block; }
 
-        .prompt-preview-toggle.open .arrow { transform: rotate(90deg); }
-
-        .prompt-preview-body {
-            display: none;
-            margin-top: 12px;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 14px;
-            font-family: var(--mono);
-            font-size: 11px;
-            color: var(--text-muted);
-            line-height: 1.8;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-
-        .prompt-preview-body.open { display: block; }
-
-        /* ================================================
+        /* ============================================
            ANIMATIONS
-        ================================================ */
-        @keyframes fadeDown {
-            from { opacity: 0; transform: translateY(-16px); }
-            to   { opacity: 1; transform: translateY(0); }
+        ============================================ */
+        @keyframes popUp {
+            from { opacity: 0; transform: translateY(20px) scale(0.96); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
         }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to   { opacity: 1; transform: translateY(0); }
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateX(8px); }
+            to   { opacity: 1; transform: translateX(0); }
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to   { opacity: 1; }
-        }
-
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
         }
-
         @keyframes progress {
             0%   { width: 0%; }
-            60%  { width: 75%; }
-            80%  { width: 85%; }
-            100% { width: 90%; }
+            60%  { width: 72%; }
+            85%  { width: 85%; }
+            100% { width: 92%; }
         }
 
-        /* ================================================
+        /* ============================================
            SCROLLBAR
-        ================================================ */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-base); }
-        ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+        ============================================ */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg2); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
     </style>
 </head>
 
 <body>
-
 <div class="wrapper">
 
-    <!-- ================================================
+    <!-- ==========================================
          HEADER
-    ================================================ -->
+    ========================================== -->
     <header class="header">
-        <div class="header-eyebrow">FINANCIAL ANALYTICS</div>
-        <h1>財務ダッシュボード<span>ジェネレーター</span></h1>
-        <p class="header-sub">財務データを入力すると、AI が分析ダッシュボードスライドを自動生成します</p>
+        <div class="header-badge">
+            <span class="dot"></span>
+            AI Financial Analytics
+        </div>
+        <h1>財務ダッシュボード<br><span class="accent">ジェネレーター</span></h1>
+        <p class="header-sub">財務データを貼り付けるだけで、AIがプロ品質のダッシュボードスライドを自動生成します ✨</p>
     </header>
 
-    <!-- ================================================
+    <!-- ==========================================
+         COMPANY NAME
+    ========================================== -->
+    <div class="company-field">
+        <div class="company-icon">🏢</div>
+        <div class="company-field-inner">
+            <span class="company-label">会社名 / Company Name</span>
+            <input type="text" class="company-input" id="companyName"
+                placeholder="例：株式会社テックフューチャー">
+        </div>
+    </div>
+
+    <!-- ==========================================
          INPUT CARD
-    ================================================ -->
+    ========================================== -->
     <div class="card" style="animation-delay:0.1s">
-        <div class="card-title">// INPUT MODE</div>
 
         <!-- TAB BAR -->
         <div class="tab-bar">
             <button class="tab-btn active" onclick="switchTab('bulk', this)">
-                一括入力（総勘定元帳）
+                📋 一括入力（総勘定元帳）
             </button>
             <button class="tab-btn" onclick="switchTab('individual', this)">
-                個別入力（PL / BS / CF）
+                📊 個別入力（PL / BS / CF）
             </button>
         </div>
 
-        <!-- ─── TAB 1: 一括入力 ─────────────────────── -->
+        <!-- ── TAB 1: 一括入力 ──────────────────── -->
         <div id="tab-bulk" class="tab-pane active">
-            <label class="field-label" for="bulkInput">年度別 総勘定元帳データ</label>
-            <textarea id="bulkInput" rows="14"
-                placeholder="例）
+
+            <!-- サンプルボタン -->
+            <div class="sample-strip">
+                <span class="sample-label">✦ サンプルデータ</span>
+                <button class="btn-sample" onclick="fillBulkSample()">
+                    🎲 架空の会社データを入力する
+                </button>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="bulkInput">
+                    <span class="dot dot-coral"></span>
+                    年度別 総勘定元帳データ
+                </label>
+                <textarea id="bulkInput" rows="15"
+                    placeholder="例）
 【2022年度】
 売上高: 1,200,000千円
 売上原価: 720,000千円
@@ -677,15 +801,23 @@
 【2023年度】
 売上高: 1,350,000千円
 ..."></textarea>
-            <p class="field-hint">複数年分のデータをまとめて貼り付けてください。CSV・テキスト形式どちらでも対応しています。</p>
+                <p class="field-hint">複数年分のデータをまとめて貼り付けてください。CSV・テキスト形式どちらでも対応しています。</p>
+            </div>
+
         </div>
 
-        <!-- ─── TAB 2: 個別入力 ─────────────────────── -->
+        <!-- ── TAB 2: 個別入力 ──────────────────── -->
         <div id="tab-individual" class="tab-pane">
 
-            <div id="yearBlocksContainer">
-                <!-- Rendered by JS -->
+            <!-- サンプルボタン -->
+            <div class="sample-strip">
+                <span class="sample-label">✦ サンプルデータ</span>
+                <button class="btn-sample" onclick="fillIndividualSample()">
+                    🎲 架空の会社データを入力する
+                </button>
             </div>
+
+            <div id="yearBlocksContainer"></div>
 
             <button class="add-year-btn" onclick="addYearBlock()">
                 ＋ 年度を追加する
@@ -693,39 +825,40 @@
 
         </div>
 
-    </div>
+    </div><!-- /card -->
 
-    <!-- ================================================
+    <!-- ==========================================
          GENERATE CARD
-    ================================================ -->
-    <div class="card" style="animation-delay:0.2s">
-        <div class="card-title">// GENERATE</div>
+    ========================================== -->
+    <div class="generate-card">
 
-        <div class="generate-section">
+        <div class="generate-row">
             <button class="btn-generate" onclick="generateDashboard()" id="generateBtn">
-                <span>ダッシュボードを生成する</span>
+                <span>✨ ダッシュボードを生成する</span>
             </button>
-            <div class="status-text" id="statusText">準備完了</div>
+            <div class="status-badge" id="statusBadge">準備完了</div>
         </div>
 
         <!-- プロンプトプレビュー -->
-        <div class="prompt-preview">
-            <button class="prompt-preview-toggle" id="promptToggleBtn" onclick="togglePromptPreview()">
-                <span class="arrow">▶</span> PROMPT PREVIEW
+        <div class="prompt-section">
+            <button class="prompt-toggle" id="promptToggleBtn" onclick="togglePrompt()">
+                <span class="arrow">▶</span> PROMPT PREVIEW（送信内容を確認）
             </button>
-            <div class="prompt-preview-body" id="promptPreviewBody"></div>
+            <div class="prompt-body" id="promptBody"></div>
         </div>
 
         <!-- ローディング -->
         <div class="loading-area" id="loadingArea">
             <div class="loading-inner">
-                <div class="spinner"></div>
+                <div class="spinner-wrap">
+                    <div class="spinner"></div>
+                </div>
                 <div>
-                    <div class="loading-text">ダッシュボード画像を生成中です...</div>
-                    <div class="loading-sub">GPT Image API 処理中 ─ 数十秒〜数分かかる場合があります</div>
+                    <div class="loading-text">🎨 ダッシュボード画像を生成中...</div>
+                    <div class="loading-sub">GPT Image API が処理中です。数十秒〜数分かかる場合があります</div>
                 </div>
             </div>
-            <div class="progress-bar-wrap">
+            <div class="progress-wrap">
                 <div class="progress-bar" id="progressBar"></div>
             </div>
         </div>
@@ -733,12 +866,15 @@
         <!-- 結果 -->
         <div class="result-area" id="resultArea">
             <div class="result-header">
-                <span class="result-label">GENERATION COMPLETE</span>
+                <span class="result-badge">
+                    <span class="dot"></span>
+                    生成完了！
+                </span>
                 <a id="downloadBtn" class="btn-download" download="financial_dashboard.png">
-                    ↓ ダウンロード (.png)
+                    ⬇ ダウンロード (.png)
                 </a>
             </div>
-            <div class="result-image-wrap">
+            <div class="result-img-wrap">
                 <img id="resultImage" src="" alt="生成されたダッシュボード">
             </div>
         </div>
@@ -748,95 +884,217 @@
 </div><!-- /wrapper -->
 
 <script>
+// ================================================
+// CONFIG
+// ================================================
+const FUNCTION_URL = 'https://testhttp-f6ehaqhvh3hvezcc.eastus2-01.azurewebsites.net/api/HttpTrigger2';
 
-// ================================================
-// STATE
-// ================================================
 let activeTab   = 'bulk';
 let yearCounter = 0;
 
 // ================================================
-// AZURE FUNCTION URL
+// SAMPLE DATA (架空：株式会社ミライテック)
 // ================================================
-const FUNCTION_URL = 'https://testhttp-f6ehaqhvh3hvezcc.eastus2-01.azurewebsites.net/api/HttpTrigger2';
+const SAMPLE_COMPANY = '株式会社ミライテック';
+
+const SAMPLE_BULK = `【2021年度】
+売上高: 850,000千円
+売上原価: 510,000千円
+売上総利益: 340,000千円
+販売費及び一般管理費: 200,000千円
+営業利益: 140,000千円
+営業外収益: 3,500千円
+営業外費用: 8,200千円
+経常利益: 135,300千円
+特別損益: -5,000千円
+税引前当期純利益: 130,300千円
+法人税等: 42,000千円
+当期純利益: 88,300千円
+
+流動資産: 320,000千円
+固定資産: 580,000千円
+資産合計: 900,000千円
+流動負債: 210,000千円
+固定負債: 190,000千円
+純資産: 500,000千円
+
+営業活動CF: +148,000千円
+投資活動CF: -95,000千円
+財務活動CF: -30,000千円
+現金期末残高: 180,000千円
+
+【2022年度】
+売上高: 1,080,000千円
+売上原価: 630,000千円
+売上総利益: 450,000千円
+販売費及び一般管理費: 240,000千円
+営業利益: 210,000千円
+営業外収益: 4,200千円
+営業外費用: 7,800千円
+経常利益: 206,400千円
+特別損益: 2,000千円
+税引前当期純利益: 208,400千円
+法人税等: 67,000千円
+当期純利益: 141,400千円
+
+流動資産: 410,000千円
+固定資産: 650,000千円
+資産合計: 1,060,000千円
+流動負債: 240,000千円
+固定負債: 180,000千円
+純資産: 640,000千円
+
+営業活動CF: +195,000千円
+投資活動CF: -130,000千円
+財務活動CF: -40,000千円
+現金期末残高: 205,000千円
+
+【2023年度】
+売上高: 1,350,000千円
+売上原価: 780,000千円
+売上総利益: 570,000千円
+販売費及び一般管理費: 290,000千円
+営業利益: 280,000千円
+営業外収益: 5,800千円
+営業外費用: 9,100千円
+経常利益: 276,700千円
+特別損益: -3,500千円
+税引前当期純利益: 273,200千円
+法人税等: 88,000千円
+当期純利益: 185,200千円
+
+流動資産: 520,000千円
+固定資産: 730,000千円
+資産合計: 1,250,000千円
+流動負債: 280,000千円
+固定負債: 170,000千円
+純資産: 800,000千円
+
+営業活動CF: +248,000千円
+投資活動CF: -160,000千円
+財務活動CF: -50,000千円
+現金期末残高: 243,000千円`;
+
+const SAMPLE_YEARS = [
+    {
+        year: '2021',
+        pl: `売上高: 850,000千円\n売上原価: 510,000千円\n売上総利益: 340,000千円\n販売費及び一般管理費: 200,000千円\n営業利益: 140,000千円\n経常利益: 135,300千円\n当期純利益: 88,300千円`,
+        bs: `流動資産: 320,000千円\n固定資産: 580,000千円\n資産合計: 900,000千円\n流動負債: 210,000千円\n固定負債: 190,000千円\n純資産: 500,000千円`,
+        cf: `営業活動CF: +148,000千円\n投資活動CF: -95,000千円\n財務活動CF: -30,000千円\n現金期末残高: 180,000千円`
+    },
+    {
+        year: '2022',
+        pl: `売上高: 1,080,000千円\n売上原価: 630,000千円\n売上総利益: 450,000千円\n販売費及び一般管理費: 240,000千円\n営業利益: 210,000千円\n経常利益: 206,400千円\n当期純利益: 141,400千円`,
+        bs: `流動資産: 410,000千円\n固定資産: 650,000千円\n資産合計: 1,060,000千円\n流動負債: 240,000千円\n固定負債: 180,000千円\n純資産: 640,000千円`,
+        cf: `営業活動CF: +195,000千円\n投資活動CF: -130,000千円\n財務活動CF: -40,000千円\n現金期末残高: 205,000千円`
+    },
+    {
+        year: '2023',
+        pl: `売上高: 1,350,000千円\n売上原価: 780,000千円\n売上総利益: 570,000千円\n販売費及び一般管理費: 290,000千円\n営業利益: 280,000千円\n経常利益: 276,700千円\n当期純利益: 185,200千円`,
+        bs: `流動資産: 520,000千円\n固定資産: 730,000千円\n資産合計: 1,250,000千円\n流動負債: 280,000千円\n固定負債: 170,000千円\n純資産: 800,000千円`,
+        cf: `営業活動CF: +248,000千円\n投資活動CF: -160,000千円\n財務活動CF: -50,000千円\n現金期末残高: 243,000千円`
+    }
+];
+
+// ================================================
+// SAMPLE FILL FUNCTIONS
+// ================================================
+function fillBulkSample() {
+    document.getElementById('companyName').value = SAMPLE_COMPANY;
+    document.getElementById('bulkInput').value = SAMPLE_BULK;
+    // bounce effect on textarea
+    const ta = document.getElementById('bulkInput');
+    ta.style.transition = 'box-shadow 0.15s';
+    ta.style.boxShadow = '0 0 0 4px rgba(245,166,35,0.3)';
+    setTimeout(() => { ta.style.boxShadow = ''; }, 500);
+    updatePromptPreview();
+}
+
+function fillIndividualSample() {
+    document.getElementById('companyName').value = SAMPLE_COMPANY;
+
+    // clear existing blocks
+    document.getElementById('yearBlocksContainer').innerHTML = '';
+    yearCounter = 0;
+
+    SAMPLE_YEARS.forEach(d => {
+        const id = addYearBlock(d.year);
+        document.getElementById('pl-' + id).value = d.pl;
+        document.getElementById('bs-' + id).value = d.bs;
+        document.getElementById('cf-' + id).value = d.cf;
+    });
+    updatePromptPreview();
+}
 
 // ================================================
 // TAB SWITCHING
 // ================================================
 function switchTab(tab, btn) {
     activeTab = tab;
-
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-
     document.getElementById('tab-' + tab).classList.add('active');
     btn.classList.add('active');
-
     updatePromptPreview();
 }
 
 // ================================================
-// YEAR BLOCKS (個別入力 tab)
+// YEAR BLOCKS
 // ================================================
 function addYearBlock(defaultYear) {
     yearCounter++;
-    const id = 'year-' + yearCounter;
-    const currentYear = new Date().getFullYear();
-    const year = defaultYear || (currentYear - 1);
+    const id = 'yb' + yearCounter;
+    const year = defaultYear || (new Date().getFullYear() - 1);
 
     const block = document.createElement('div');
     block.className = 'year-block';
     block.id = id;
     block.innerHTML = `
         <div class="year-block-header">
-            <span class="year-badge">YEAR ${yearCounter}</span>
-            <input type="text" class="year-input" value="${year}" placeholder="2023"
-                onchange="updatePromptPreview()"
+            <span class="year-pill">📅 Year ${yearCounter}</span>
+            <input type="text" class="year-input" id="yr-${id}" value="${year}" placeholder="2023"
                 oninput="updatePromptPreview()">
-            <button class="remove-year-btn" onclick="removeYearBlock('${id}')" title="削除">×</button>
+            <button class="remove-year-btn" onclick="removeYearBlock('${id}')" title="削除">✕</button>
         </div>
         <div class="statement-grid">
-            <div class="statement-block">
-                <span class="statement-tag tag-pl">P/L 損益計算書</span>
-                <textarea rows="8" class="pl-input" placeholder="売上高: 1,200,000千円
-売上原価: 720,000千円
-売上総利益: 480,000千円
-営業利益: 200,000千円
-経常利益: 195,000千円
-当期純利益: 130,000千円" oninput="updatePromptPreview()"></textarea>
+            <div>
+                <span class="stmt-tag tag-pl">
+                    <span class="dot" style="background:var(--sky)"></span>P/L 損益計算書
+                </span>
+                <textarea rows="8" id="pl-${id}"
+                    placeholder="売上高: 1,200,000千円&#10;売上原価: 720,000千円&#10;売上総利益: 480,000千円&#10;営業利益: 200,000千円&#10;経常利益: 195,000千円&#10;当期純利益: 130,000千円"
+                    oninput="updatePromptPreview()"></textarea>
             </div>
-            <div class="statement-block">
-                <span class="statement-tag tag-bs">B/S 貸借対照表</span>
-                <textarea rows="8" class="bs-input" placeholder="流動資産: 450,000千円
-固定資産: 800,000千円
-資産合計: 1,250,000千円
-流動負債: 300,000千円
-固定負債: 200,000千円
-純資産: 750,000千円" oninput="updatePromptPreview()"></textarea>
+            <div>
+                <span class="stmt-tag tag-bs">
+                    <span class="dot" style="background:#f5a623"></span>B/S 貸借対照表
+                </span>
+                <textarea rows="8" id="bs-${id}"
+                    placeholder="流動資産: 450,000千円&#10;固定資産: 800,000千円&#10;資産合計: 1,250,000千円&#10;流動負債: 300,000千円&#10;固定負債: 200,000千円&#10;純資産: 750,000千円"
+                    oninput="updatePromptPreview()"></textarea>
             </div>
-            <div class="statement-block">
-                <span class="statement-tag tag-cf">C/F キャッシュフロー</span>
-                <textarea rows="8" class="cf-input" placeholder="営業CF: +180,000千円
-投資CF: -120,000千円
-財務CF: -40,000千円
-現金増減: +20,000千円
-期末残高: 220,000千円" oninput="updatePromptPreview()"></textarea>
+            <div>
+                <span class="stmt-tag tag-cf">
+                    <span class="dot" style="background:var(--mint)"></span>C/F キャッシュフロー
+                </span>
+                <textarea rows="8" id="cf-${id}"
+                    placeholder="営業CF: +180,000千円&#10;投資CF: -120,000千円&#10;財務CF: -40,000千円&#10;現金増減: +20,000千円&#10;期末残高: 220,000千円"
+                    oninput="updatePromptPreview()"></textarea>
             </div>
-        </div>
-    `;
+        </div>`;
 
     document.getElementById('yearBlocksContainer').appendChild(block);
     updatePromptPreview();
+    return id;
 }
 
 function removeYearBlock(id) {
-    const blocks = document.querySelectorAll('.year-block');
-    if (blocks.length <= 1) return; // 最低1年は残す
+    if (document.querySelectorAll('.year-block').length <= 1) return;
     document.getElementById(id)?.remove();
     updatePromptPreview();
 }
 
-// 初期表示: 2年分
+// initial 2 blocks
 addYearBlock(new Date().getFullYear() - 2);
 addYearBlock(new Date().getFullYear() - 1);
 
@@ -844,69 +1102,70 @@ addYearBlock(new Date().getFullYear() - 1);
 // PROMPT BUILDER
 // ================================================
 function buildPrompt() {
+    const company = document.getElementById('companyName').value.trim() || '対象会社';
+
     if (activeTab === 'bulk') {
         const data = document.getElementById('bulkInput').value.trim();
+        return `You are a world-class financial data visualization designer. Create a stunning, professional financial dashboard slide image for "${company}".
 
-        return `You are a financial data visualization expert and graphic designer. Create a highly professional financial dashboard slide image with the following specifications:
+DASHBOARD SPECIFICATIONS:
+- Format: Wide landscape (16:9 ratio), high-resolution presentation slide
+- Style: Modern, bright and clean design with white/light background, vibrant chart colors (coral, sky blue, mint green, amber), readable Japanese typography
+- Include company name "${company}" prominently at the top
 
-LAYOUT: Wide-format dashboard (landscape orientation) with multiple charts arranged in a clean grid
-CHARTS TO INCLUDE:
-1. Revenue & Profit Trend – grouped bar chart or line chart showing year-over-year changes
-2. Profit Margin Analysis – line chart showing gross margin %, operating margin %, net margin % by year
-3. Balance Sheet Composition – stacked bar chart showing assets vs liabilities/equity breakdown
-4. Cash Flow Waterfall – waterfall chart showing operating/investing/financing CF
-5. KPI Summary Panel – large key numbers panel showing YoY growth rates
+CHARTS TO INCLUDE (arrange in a clean grid):
+1. 📊 Revenue & Profit Bar Chart — grouped bars showing revenue, gross profit, operating income, net income per year
+2. 📈 Margin Trend Line Chart — gross margin %, operating margin %, net margin % across years
+3. 🏛 Balance Sheet Stack — horizontal stacked bars: current assets, fixed assets, current liabilities, fixed liabilities, equity by year
+4. 💧 Cash Flow Waterfall — operating CF, investing CF, financing CF per year with net change
+5. 🎯 KPI Summary Panel — large bold numbers: revenue YoY%, profit YoY%, ROE, equity ratio
 
-DESIGN: Dark navy/charcoal background (#0a0e1a), gold and blue chart colors, white labels, clean sans-serif Japanese typography, executive presentation quality, no decorative illustrations
-
-All axis labels and chart titles must be in Japanese. Show exact numbers from the data.
+DESIGN RULES:
+- Bright white/light cream background
+- Chart palette: coral red #FF6B4A, sky blue #0099E6, mint green #00C896, amber #F5A623
+- Clean sans-serif Japanese labels on all axes and chart titles
+- Show exact yen values from the data; include % annotations on key metrics
+- Executive presentation quality — clear hierarchy, generous spacing
 
 FINANCIAL DATA:
 ${data || '（データが入力されていません）'}`;
 
     } else {
-        // 個別入力モード
         const blocks = document.querySelectorAll('.year-block');
-        let dataSection = '';
-
-        blocks.forEach(block => {
-            const year = block.querySelector('.year-input')?.value || '不明';
-            const pl   = block.querySelector('.pl-input')?.value.trim()  || '（未入力）';
-            const bs   = block.querySelector('.bs-input')?.value.trim()  || '（未入力）';
-            const cf   = block.querySelector('.cf-input')?.value.trim()  || '（未入力）';
-
-            dataSection += `
-【${year}年度】
-▼ 損益計算書 (P/L)
-${pl}
-
-▼ 貸借対照表 (B/S)
-${bs}
-
-▼ キャッシュフロー計算書 (C/F)
-${cf}
----`;
+        let dataSec = '';
+        blocks.forEach(b => {
+            const yr = b.querySelector('[id^="yr-"]')?.value || '不明';
+            const pl = b.querySelector('[id^="pl-"]')?.value.trim() || '（未入力）';
+            const bs = b.querySelector('[id^="bs-"]')?.value.trim() || '（未入力）';
+            const cf = b.querySelector('[id^="cf-"]')?.value.trim() || '（未入力）';
+            dataSec += `\n【${yr}年度】\n▼PL\n${pl}\n▼BS\n${bs}\n▼CF\n${cf}\n---`;
         });
 
-        const yearCount = blocks.length;
-        const yearRange = Array.from(blocks).map(b => b.querySelector('.year-input')?.value).join('・');
+        const years = Array.from(blocks).map(b => b.querySelector('[id^="yr-"]')?.value).join('・');
 
-        return `You are a financial data visualization expert and graphic designer. Create a highly professional financial dashboard slide image comparing ${yearCount} fiscal years (${yearRange}).
+        return `You are a world-class financial data visualization designer. Create a stunning, professional multi-year financial dashboard slide for "${company}" covering fiscal years: ${years}.
 
-LAYOUT: Wide-format dashboard (landscape orientation) with multiple charts in a clean grid layout
-CHARTS TO INCLUDE:
-1. P/L Trend Chart – grouped bar chart: Revenue, Gross Profit, Operating Income, Net Income by year (show actual figures)
-2. Margin Analysis – multi-line chart: Gross margin %, Operating margin %, Net margin % across years
-3. B/S Structure Chart – stacked horizontal bar per year showing asset composition and liability/equity structure
-4. Cash Flow Comparison – grouped bar chart: Operating CF, Investing CF, Financing CF by year
-5. KPI Summary Row – prominent numbers showing key YoY changes (revenue growth %, ROE, debt ratio)
+DASHBOARD SPECIFICATIONS:
+- Format: Wide landscape (16:9 ratio), high-resolution presentation slide
+- Style: Modern, bright and clean — white/cream background, vibrant chart colors, clear Japanese typography
+- Include company name "${company}" and year range "${years}" prominently at the top
 
-DESIGN: Dark navy background (#0a0e1a), gold (#c9a84c) and electric blue (#3d8bff) and teal (#2dd4a0) chart colors, crisp white labels, clean Japanese typography, high-contrast executive presentation style
+CHARTS TO INCLUDE (arrange in a clean grid):
+1. 📊 P/L Multi-Year Bar Chart — grouped bars: revenue, gross profit, operating income, net income for each year. Show actual values in 千円.
+2. 📈 Profit Margin Lines — three lines: gross/operating/net margin % across ${years}. Annotate peak values.
+3. 🏛 B/S Year-by-Year Composition — stacked horizontal bars per year: current assets | fixed assets | current liabilities | fixed liabilities | equity
+4. 💧 Cash Flow Grouped Bars — operating / investing / financing CF per year, with color coding (green=positive, red/pink=negative)
+5. 🎯 KPI Summary Cards — YoY revenue growth %, operating profit growth %, ROE, equity ratio, with trend arrows
 
-All labels, titles, and annotations must be in Japanese. Plot exact values from the data provided.
+DESIGN RULES:
+- Bright white/cream background (#FEFCF7)
+- Chart palette: coral #FF6B4A, sky blue #0099E6, mint #00C896, amber #F5A623, purple #8B5CF6
+- All labels, axis titles, and annotations in Japanese
+- Plot exact values — do not round or approximate
+- Polished executive presentation quality
 
 FINANCIAL DATA:
-${dataSection}`;
+${dataSec}`;
     }
 }
 
@@ -914,29 +1173,27 @@ ${dataSection}`;
 // PROMPT PREVIEW
 // ================================================
 function updatePromptPreview() {
-    const body = document.getElementById('promptPreviewBody');
-    if (body.classList.contains('open')) {
-        body.textContent = buildPrompt();
-    }
+    const body = document.getElementById('promptBody');
+    if (body.classList.contains('open')) body.textContent = buildPrompt();
 }
 
-function togglePromptPreview() {
+function togglePrompt() {
     const btn  = document.getElementById('promptToggleBtn');
-    const body = document.getElementById('promptPreviewBody');
-    const isOpen = body.classList.toggle('open');
-    btn.classList.toggle('open', isOpen);
-    if (isOpen) body.textContent = buildPrompt();
+    const body = document.getElementById('promptBody');
+    const open = body.classList.toggle('open');
+    btn.classList.toggle('open', open);
+    if (open) body.textContent = buildPrompt();
 }
 
 // ================================================
 // GENERATE
 // ================================================
 async function generateDashboard() {
-
     const prompt = buildPrompt();
+
     const hasData = activeTab === 'bulk'
         ? document.getElementById('bulkInput').value.trim().length > 0
-        : Array.from(document.querySelectorAll('.pl-input, .bs-input, .cf-input'))
+        : Array.from(document.querySelectorAll('[id^="pl-"],[id^="bs-"],[id^="cf-"]'))
               .some(t => t.value.trim().length > 0);
 
     if (!hasData) {
@@ -945,26 +1202,22 @@ async function generateDashboard() {
     }
 
     const btn         = document.getElementById('generateBtn');
-    const statusText  = document.getElementById('statusText');
+    const badge       = document.getElementById('statusBadge');
     const loadingArea = document.getElementById('loadingArea');
     const resultArea  = document.getElementById('resultArea');
     const progressBar = document.getElementById('progressBar');
-    const resultImg   = document.getElementById('resultImage');
-    const dlBtn       = document.getElementById('downloadBtn');
 
-    // ─── UI: loading state ───────────────────────
-    btn.disabled = true;
-    statusText.textContent = '生成中...';
+    btn.disabled      = true;
+    badge.textContent = '⏳ 生成中...';
     loadingArea.style.display = 'block';
     resultArea.style.display  = 'none';
 
     // reset progress animation
     progressBar.style.animation = 'none';
-    progressBar.offsetHeight; // reflow
+    void progressBar.offsetHeight;
     progressBar.style.animation = '';
 
     try {
-        // ─── API CALL ────────────────────────────
         const response = await fetch(FUNCTION_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -976,20 +1229,18 @@ async function generateDashboard() {
             throw new Error(`HTTP ${response.status}: ${errText}`);
         }
 
-        // ─── IMAGE BLOB ──────────────────────────
         const blob     = await response.blob();
         const imageUrl = URL.createObjectURL(blob);
 
-        // ─── DISPLAY ─────────────────────────────
-        resultImg.src  = imageUrl;
-        dlBtn.href     = imageUrl;
+        document.getElementById('resultImage').src = imageUrl;
+        document.getElementById('downloadBtn').href = imageUrl;
         resultArea.style.display = 'block';
-        statusText.textContent   = '✓ 生成完了';
+        badge.textContent = '✅ 生成完了！';
 
     } catch (err) {
         console.error(err);
         alert('エラーが発生しました:\n' + err.message);
-        statusText.textContent = 'エラー — 再試行してください';
+        badge.textContent = '❌ エラー';
 
     } finally {
         btn.disabled = false;
@@ -997,7 +1248,6 @@ async function generateDashboard() {
         progressBar.style.animation = 'none';
     }
 }
-
 </script>
 
 </body>
