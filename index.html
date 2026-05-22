@@ -839,12 +839,12 @@
             <div class="status-badge" id="statusBadge">準備完了</div>
         </div>
 
-        <!-- プロンプトプレビュー -->
+        <!-- データプレビュー -->
         <div class="prompt-section">
             <button class="prompt-toggle" id="promptToggleBtn" onclick="togglePrompt()">
-                <span class="arrow">▶</span> PROMPT PREVIEW（送信内容を確認）
+                <span class="arrow">▶</span>
+                送信データ PREVIEW
             </button>
-            <div class="prompt-body" id="promptBody"></div>
         </div>
 
         <!-- ローディング -->
@@ -887,9 +887,13 @@
 // ================================================
 // CONFIG
 // ================================================
-const FUNCTION_URL = 'https://testhttp-f6ehaqhvh3hvezcc.eastus2-01.azurewebsites.net/api/HttpTrigger2';
+const FUNCTION_URL =
+    'https://testhttp-f6ehaqhvh3hvezcc.eastus2-01.azurewebsites.net/api/HttpTrigger2';
 
-let activeTab   = 'bulk';
+const MODE_BULK = 'bulk';
+const MODE_INDIVIDUAL = 'individual';
+
+let activeTab = MODE_BULK;
 let yearCounter = 0;
 
 // ================================================
@@ -978,21 +982,63 @@ const SAMPLE_BULK = `【2021年度】
 const SAMPLE_YEARS = [
     {
         year: '2021',
-        pl: `売上高: 850,000千円\n売上原価: 510,000千円\n売上総利益: 340,000千円\n販売費及び一般管理費: 200,000千円\n営業利益: 140,000千円\n経常利益: 135,300千円\n当期純利益: 88,300千円`,
-        bs: `流動資産: 320,000千円\n固定資産: 580,000千円\n資産合計: 900,000千円\n流動負債: 210,000千円\n固定負債: 190,000千円\n純資産: 500,000千円`,
-        cf: `営業活動CF: +148,000千円\n投資活動CF: -95,000千円\n財務活動CF: -30,000千円\n現金期末残高: 180,000千円`
+        pl: `売上高: 850,000千円
+売上原価: 510,000千円
+売上総利益: 340,000千円
+販売費及び一般管理費: 200,000千円
+営業利益: 140,000千円
+経常利益: 135,300千円
+当期純利益: 88,300千円`,
+        bs: `流動資産: 320,000千円
+固定資産: 580,000千円
+資産合計: 900,000千円
+流動負債: 210,000千円
+固定負債: 190,000千円
+純資産: 500,000千円`,
+        cf: `営業活動CF: +148,000千円
+投資活動CF: -95,000千円
+財務活動CF: -30,000千円
+現金期末残高: 180,000千円`
     },
     {
         year: '2022',
-        pl: `売上高: 1,080,000千円\n売上原価: 630,000千円\n売上総利益: 450,000千円\n販売費及び一般管理費: 240,000千円\n営業利益: 210,000千円\n経常利益: 206,400千円\n当期純利益: 141,400千円`,
-        bs: `流動資産: 410,000千円\n固定資産: 650,000千円\n資産合計: 1,060,000千円\n流動負債: 240,000千円\n固定負債: 180,000千円\n純資産: 640,000千円`,
-        cf: `営業活動CF: +195,000千円\n投資活動CF: -130,000千円\n財務活動CF: -40,000千円\n現金期末残高: 205,000千円`
+        pl: `売上高: 1,080,000千円
+売上原価: 630,000千円
+売上総利益: 450,000千円
+販売費及び一般管理費: 240,000千円
+営業利益: 210,000千円
+経常利益: 206,400千円
+当期純利益: 141,400千円`,
+        bs: `流動資産: 410,000千円
+固定資産: 650,000千円
+資産合計: 1,060,000千円
+流動負債: 240,000千円
+固定負債: 180,000千円
+純資産: 640,000千円`,
+        cf: `営業活動CF: +195,000千円
+投資活動CF: -130,000千円
+財務活動CF: -40,000千円
+現金期末残高: 205,000千円`
     },
     {
         year: '2023',
-        pl: `売上高: 1,350,000千円\n売上原価: 780,000千円\n売上総利益: 570,000千円\n販売費及び一般管理費: 290,000千円\n営業利益: 280,000千円\n経常利益: 276,700千円\n当期純利益: 185,200千円`,
-        bs: `流動資産: 520,000千円\n固定資産: 730,000千円\n資産合計: 1,250,000千円\n流動負債: 280,000千円\n固定負債: 170,000千円\n純資産: 800,000千円`,
-        cf: `営業活動CF: +248,000千円\n投資活動CF: -160,000千円\n財務活動CF: -50,000千円\n現金期末残高: 243,000千円`
+        pl: `売上高: 1,350,000千円
+売上原価: 780,000千円
+売上総利益: 570,000千円
+販売費及び一般管理費: 290,000千円
+営業利益: 280,000千円
+経常利益: 276,700千円
+当期純利益: 185,200千円`,
+        bs: `流動資産: 520,000千円
+固定資産: 730,000千円
+資産合計: 1,250,000千円
+流動負債: 280,000千円
+固定負債: 170,000千円
+純資産: 800,000千円`,
+        cf: `営業活動CF: +248,000千円
+投資活動CF: -160,000千円
+財務活動CF: -50,000千円
+現金期末残高: 243,000千円`
     }
 ];
 
@@ -1000,29 +1046,45 @@ const SAMPLE_YEARS = [
 // SAMPLE FILL FUNCTIONS
 // ================================================
 function fillBulkSample() {
-    document.getElementById('companyName').value = SAMPLE_COMPANY;
-    document.getElementById('bulkInput').value = SAMPLE_BULK;
-    // bounce effect on textarea
-    const ta = document.getElementById('bulkInput');
+
+    document.getElementById('companyName').value =
+        SAMPLE_COMPANY;
+
+    document.getElementById('bulkInput').value =
+        SAMPLE_BULK;
+
+    const ta =
+        document.getElementById('bulkInput');
+
     ta.style.transition = 'box-shadow 0.15s';
-    ta.style.boxShadow = '0 0 0 4px rgba(245,166,35,0.3)';
-    setTimeout(() => { ta.style.boxShadow = ''; }, 500);
+    ta.style.boxShadow =
+        '0 0 0 4px rgba(245,166,35,0.3)';
+
+    setTimeout(() => {
+        ta.style.boxShadow = '';
+    }, 500);
+
     updatePromptPreview();
 }
 
 function fillIndividualSample() {
-    document.getElementById('companyName').value = SAMPLE_COMPANY;
 
-    // clear existing blocks
+    document.getElementById('companyName').value =
+        SAMPLE_COMPANY;
+
     document.getElementById('yearBlocksContainer').innerHTML = '';
+
     yearCounter = 0;
 
     SAMPLE_YEARS.forEach(d => {
+
         const id = addYearBlock(d.year);
+
         document.getElementById('pl-' + id).value = d.pl;
         document.getElementById('bs-' + id).value = d.bs;
         document.getElementById('cf-' + id).value = d.cf;
     });
+
     updatePromptPreview();
 }
 
@@ -1030,11 +1092,20 @@ function fillIndividualSample() {
 // TAB SWITCHING
 // ================================================
 function switchTab(tab, btn) {
+
     activeTab = tab;
-    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
+
+    document.querySelectorAll('.tab-pane')
+        .forEach(p => p.classList.remove('active'));
+
+    document.querySelectorAll('.tab-btn')
+        .forEach(b => b.classList.remove('active'));
+
+    document.getElementById('tab-' + tab)
+        .classList.add('active');
+
     btn.classList.add('active');
+
     updatePromptPreview();
 }
 
@@ -1042,209 +1113,337 @@ function switchTab(tab, btn) {
 // YEAR BLOCKS
 // ================================================
 function addYearBlock(defaultYear) {
+
     yearCounter++;
+
     const id = 'yb' + yearCounter;
-    const year = defaultYear || (new Date().getFullYear() - 1);
+
+    const year =
+        defaultYear || (new Date().getFullYear() - 1);
 
     const block = document.createElement('div');
+
     block.className = 'year-block';
     block.id = id;
+
     block.innerHTML = `
         <div class="year-block-header">
             <span class="year-pill">📅 Year ${yearCounter}</span>
-            <input type="text" class="year-input" id="yr-${id}" value="${year}" placeholder="2023"
-                oninput="updatePromptPreview()">
-            <button class="remove-year-btn" onclick="removeYearBlock('${id}')" title="削除">✕</button>
+
+            <input
+                type="text"
+                class="year-input"
+                id="yr-${id}"
+                value="${year}"
+                placeholder="2023"
+                oninput="updatePromptPreview()"
+            >
+
+            <button
+                class="remove-year-btn"
+                onclick="removeYearBlock('${id}')"
+                title="削除"
+            >
+                ✕
+            </button>
         </div>
+
         <div class="statement-grid">
+
             <div>
                 <span class="stmt-tag tag-pl">
-                    <span class="dot" style="background:var(--sky)"></span>P/L 損益計算書
+                    <span class="dot" style="background:var(--sky)"></span>
+                    P/L 損益計算書
                 </span>
-                <textarea rows="8" id="pl-${id}"
+
+                <textarea
+                    rows="8"
+                    id="pl-${id}"
                     placeholder="売上高: 1,200,000千円&#10;売上原価: 720,000千円&#10;売上総利益: 480,000千円&#10;営業利益: 200,000千円&#10;経常利益: 195,000千円&#10;当期純利益: 130,000千円"
-                    oninput="updatePromptPreview()"></textarea>
+                    oninput="updatePromptPreview()"
+                ></textarea>
             </div>
+
             <div>
                 <span class="stmt-tag tag-bs">
-                    <span class="dot" style="background:#f5a623"></span>B/S 貸借対照表
+                    <span class="dot" style="background:#f5a623"></span>
+                    B/S 貸借対照表
                 </span>
-                <textarea rows="8" id="bs-${id}"
+
+                <textarea
+                    rows="8"
+                    id="bs-${id}"
                     placeholder="流動資産: 450,000千円&#10;固定資産: 800,000千円&#10;資産合計: 1,250,000千円&#10;流動負債: 300,000千円&#10;固定負債: 200,000千円&#10;純資産: 750,000千円"
-                    oninput="updatePromptPreview()"></textarea>
+                    oninput="updatePromptPreview()"
+                ></textarea>
             </div>
+
             <div>
                 <span class="stmt-tag tag-cf">
-                    <span class="dot" style="background:var(--mint)"></span>C/F キャッシュフロー
+                    <span class="dot" style="background:var(--mint)"></span>
+                    C/F キャッシュフロー
                 </span>
-                <textarea rows="8" id="cf-${id}"
-                    placeholder="営業CF: +180,000千円&#10;投資CF: -120,000千円&#10;財務CF: -40,000千円&#10;現金増減: +20,000千円&#10;期末残高: 220,000千円"
-                    oninput="updatePromptPreview()"></textarea>
-            </div>
-        </div>`;
 
-    document.getElementById('yearBlocksContainer').appendChild(block);
+                <textarea
+                    rows="8"
+                    id="cf-${id}"
+                    placeholder="営業CF: +180,000千円&#10;投資CF: -120,000千円&#10;財務CF: -40,000千円&#10;現金増減: +20,000千円&#10;期末残高: 220,000千円"
+                    oninput="updatePromptPreview()"
+                ></textarea>
+            </div>
+
+        </div>
+    `;
+
+    document.getElementById('yearBlocksContainer')
+        .appendChild(block);
+
     updatePromptPreview();
+
     return id;
 }
 
 function removeYearBlock(id) {
-    if (document.querySelectorAll('.year-block').length <= 1) return;
+
+    if (document.querySelectorAll('.year-block').length <= 1) {
+        return;
+    }
+
     document.getElementById(id)?.remove();
+
     updatePromptPreview();
 }
 
-// initial 2 blocks
+// 初期ブロック
 addYearBlock(new Date().getFullYear() - 2);
 addYearBlock(new Date().getFullYear() - 1);
 
 // ================================================
-// PROMPT BUILDER
+// FINANCIAL DATA BUILDER
 // ================================================
-function buildPrompt() {
-    const company = document.getElementById('companyName').value.trim() || '対象会社';
+function buildFinancialData() {
 
-    if (activeTab === 'bulk') {
-        const data = document.getElementById('bulkInput').value.trim();
-        return `You are a world-class financial data visualization designer. Create a stunning, professional financial dashboard slide image for "${company}".
+    if (activeTab === MODE_BULK) {
 
-DASHBOARD SPECIFICATIONS:
-- Format: Wide landscape (16:9 ratio), high-resolution presentation slide
-- Style: Modern, bright and clean design with white/light background, vibrant chart colors (coral, sky blue, mint green, amber), readable Japanese typography
-- Include company name "${company}" prominently at the top
+        return document.getElementById('bulkInput')
+            .value
+            .trim();
+    }
 
-CHARTS TO INCLUDE (arrange in a clean grid):
-1. 📊 Revenue & Profit Bar Chart — grouped bars showing revenue, gross profit, operating income, net income per year
-2. 📈 Margin Trend Line Chart — gross margin %, operating margin %, net margin % across years
-3. 🏛 Balance Sheet Stack — horizontal stacked bars: current assets, fixed assets, current liabilities, fixed liabilities, equity by year
-4. 💧 Cash Flow Waterfall — operating CF, investing CF, financing CF per year with net change
-5. 🎯 KPI Summary Panel — large bold numbers: revenue YoY%, profit YoY%, ROE, equity ratio
+    const blocks =
+        document.querySelectorAll('.year-block');
 
-DESIGN RULES:
-- Bright white/light cream background
-- Chart palette: coral red #FF6B4A, sky blue #0099E6, mint green #00C896, amber #F5A623
-- Clean sans-serif Japanese labels on all axes and chart titles
-- Show exact yen values from the data; include % annotations on key metrics
-- Executive presentation quality — clear hierarchy, generous spacing
+    let dataSec = '';
 
-FINANCIAL DATA:
-${data || '（データが入力されていません）'}`;
+    blocks.forEach(b => {
 
-    } else {
-        const blocks = document.querySelectorAll('.year-block');
-        let dataSec = '';
-        blocks.forEach(b => {
-            const yr = b.querySelector('[id^="yr-"]')?.value || '不明';
-            const pl = b.querySelector('[id^="pl-"]')?.value.trim() || '（未入力）';
-            const bs = b.querySelector('[id^="bs-"]')?.value.trim() || '（未入力）';
-            const cf = b.querySelector('[id^="cf-"]')?.value.trim() || '（未入力）';
-            dataSec += `\n【${yr}年度】\n▼PL\n${pl}\n▼BS\n${bs}\n▼CF\n${cf}\n---`;
-        });
+        const yr =
+            b.querySelector('[id^="yr-"]')?.value || '不明';
 
-        const years = Array.from(blocks).map(b => b.querySelector('[id^="yr-"]')?.value).join('・');
+        const pl =
+            b.querySelector('[id^="pl-"]')
+                ?.value
+                .trim() || '（未入力）';
 
-        return `You are a world-class financial data visualization designer. Create a stunning, professional multi-year financial dashboard slide for "${company}" covering fiscal years: ${years}.
+        const bs =
+            b.querySelector('[id^="bs-"]')
+                ?.value
+                .trim() || '（未入力）';
 
-DASHBOARD SPECIFICATIONS:
-- Format: Wide landscape (16:9 ratio), high-resolution presentation slide
-- Style: Modern, bright and clean — white/cream background, vibrant chart colors, clear Japanese typography
-- Include company name "${company}" and year range "${years}" prominently at the top
+        const cf =
+            b.querySelector('[id^="cf-"]')
+                ?.value
+                .trim() || '（未入力）';
 
-CHARTS TO INCLUDE (arrange in a clean grid):
-1. 📊 P/L Multi-Year Bar Chart — grouped bars: revenue, gross profit, operating income, net income for each year. Show actual values in 千円.
-2. 📈 Profit Margin Lines — three lines: gross/operating/net margin % across ${years}. Annotate peak values.
-3. 🏛 B/S Year-by-Year Composition — stacked horizontal bars per year: current assets | fixed assets | current liabilities | fixed liabilities | equity
-4. 💧 Cash Flow Grouped Bars — operating / investing / financing CF per year, with color coding (green=positive, red/pink=negative)
-5. 🎯 KPI Summary Cards — YoY revenue growth %, operating profit growth %, ROE, equity ratio, with trend arrows
+        dataSec += `【${yr}年度】
 
-DESIGN RULES:
-- Bright white/cream background (#FEFCF7)
-- Chart palette: coral #FF6B4A, sky blue #0099E6, mint #00C896, amber #F5A623, purple #8B5CF6
-- All labels, axis titles, and annotations in Japanese
-- Plot exact values — do not round or approximate
-- Polished executive presentation quality
+▼PL
+${pl}
 
-FINANCIAL DATA:
-${dataSec}`;
+▼BS
+${bs}
+
+▼CF
+${cf}
+
+--------------------------------
+
+`;
+    });
+
+    return dataSec.trim();
+}
+
+// ================================================
+// DATA PREVIEW
+// ================================================
+function togglePrompt() {
+
+    const btn =
+        document.getElementById('promptToggleBtn');
+
+    const body =
+        document.getElementById('promptBody');
+
+    btn.classList.toggle('open');
+
+    body.classList.toggle('open');
+
+    if (body.classList.contains('open')) {
+        updatePromptPreview();
     }
 }
 
-// ================================================
-// PROMPT PREVIEW
-// ================================================
 function updatePromptPreview() {
-    const body = document.getElementById('promptBody');
-    if (body.classList.contains('open')) body.textContent = buildPrompt();
-}
 
-function togglePrompt() {
-    const btn  = document.getElementById('promptToggleBtn');
-    const body = document.getElementById('promptBody');
-    const open = body.classList.toggle('open');
-    btn.classList.toggle('open', open);
-    if (open) body.textContent = buildPrompt();
+    const body =
+        document.getElementById('promptBody');
+
+    if (!body || !body.classList.contains('open')) {
+        return;
+    }
+
+    const company =
+        document.getElementById('companyName')
+            .value
+            .trim() || '対象会社';
+
+    const financialData =
+        buildFinancialData();
+
+    body.textContent = `MODE:
+${activeTab}
+
+COMPANY:
+${company}
+
+FINANCIAL DATA:
+${financialData}`;
 }
 
 // ================================================
 // GENERATE
 // ================================================
 async function generateDashboard() {
-    const prompt = buildPrompt();
 
-    const hasData = activeTab === 'bulk'
-        ? document.getElementById('bulkInput').value.trim().length > 0
-        : Array.from(document.querySelectorAll('[id^="pl-"],[id^="bs-"],[id^="cf-"]'))
-              .some(t => t.value.trim().length > 0);
+    const company =
+        document.getElementById('companyName')
+            .value
+            .trim() || '対象会社';
 
-    if (!hasData) {
+    const financialData =
+        buildFinancialData();
+
+    if (!financialData.trim()) {
+
         alert('財務データを入力してください。');
+
         return;
     }
 
-    const btn         = document.getElementById('generateBtn');
-    const badge       = document.getElementById('statusBadge');
-    const loadingArea = document.getElementById('loadingArea');
-    const resultArea  = document.getElementById('resultArea');
-    const progressBar = document.getElementById('progressBar');
+    const btn =
+        document.getElementById('generateBtn');
 
-    btn.disabled      = true;
+    const badge =
+        document.getElementById('statusBadge');
+
+    const loadingArea =
+        document.getElementById('loadingArea');
+
+    const resultArea =
+        document.getElementById('resultArea');
+
+    const progressBar =
+        document.getElementById('progressBar');
+
+    btn.disabled = true;
+
     badge.textContent = '⏳ 生成中...';
-    loadingArea.style.display = 'block';
-    resultArea.style.display  = 'none';
 
-    // reset progress animation
+    loadingArea.style.display = 'block';
+
+    resultArea.style.display = 'none';
+
+    // progress reset
     progressBar.style.animation = 'none';
+
     void progressBar.offsetHeight;
+
     progressBar.style.animation = '';
 
     try {
-        const response = await fetch(FUNCTION_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt })
-        });
+
+        // =====================================
+        // REQUEST BODY
+        // =====================================
+        const requestBody = {
+            mode: activeTab,
+            company: company,
+            financialData: financialData
+        };
+
+        // =====================================
+        // API CALL
+        // =====================================
+        const response = await fetch(
+            FUNCTION_URL,
+            {
+                method: 'POST',
+
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+
+                body: JSON.stringify(requestBody)
+            }
+        );
 
         if (!response.ok) {
-            const errText = await response.text().catch(() => '');
-            throw new Error(`HTTP ${response.status}: ${errText}`);
+
+            const errText =
+                await response.text().catch(() => '');
+
+            throw new Error(
+                `HTTP ${response.status}: ${errText}`
+            );
         }
 
-        const blob     = await response.blob();
-        const imageUrl = URL.createObjectURL(blob);
+        // =====================================
+        // IMAGE
+        // =====================================
+        const blob =
+            await response.blob();
 
-        document.getElementById('resultImage').src = imageUrl;
-        document.getElementById('downloadBtn').href = imageUrl;
+        const imageUrl =
+            URL.createObjectURL(blob);
+
+        document.getElementById('resultImage').src =
+            imageUrl;
+
+        document.getElementById('downloadBtn').href =
+            imageUrl;
+
         resultArea.style.display = 'block';
+
         badge.textContent = '✅ 生成完了！';
 
     } catch (err) {
+
         console.error(err);
-        alert('エラーが発生しました:\n' + err.message);
+
+        alert(
+            'エラーが発生しました:\n' +
+            err.message
+        );
+
         badge.textContent = '❌ エラー';
 
     } finally {
+
         btn.disabled = false;
+
         loadingArea.style.display = 'none';
+
         progressBar.style.animation = 'none';
     }
 }
