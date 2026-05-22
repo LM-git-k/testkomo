@@ -3,180 +3,1002 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPT Image Generator</title>
+    <title>財務ダッシュボード ジェネレーター</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
+        /* ================================================
+           CSS VARIABLES
+        ================================================ */
+        :root {
+            --bg-base:      #070b14;
+            --bg-surface:   #0e1525;
+            --bg-card:      #131c30;
+            --bg-input:     #0a1020;
+            --border:       #1e2d4a;
+            --border-light: #2a3d60;
+            --gold:         #c9a84c;
+            --gold-dim:     #8a6e30;
+            --gold-glow:    rgba(201,168,76,0.15);
+            --blue:         #3d8bff;
+            --blue-dim:     #1a5acc;
+            --text-primary: #e2e8f0;
+            --text-secondary:#8ea3c3;
+            --text-muted:   #4a6080;
+            --success:      #2dd4a0;
+            --danger:       #ff4d6a;
+            --mono:         'Space Mono', monospace;
+            --sans:         'Noto Sans JP', sans-serif;
+        }
+
+        /* ================================================
+           RESET & BASE
+        ================================================ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
 
         body {
-            font-family: Arial, sans-serif;
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 20px;
+            font-family: var(--sans);
+            background: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* grid noise texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ================================================
+           LAYOUT
+        ================================================ */
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        /* ================================================
+           HEADER
+        ================================================ */
+        .header {
+            margin-bottom: 40px;
+            animation: fadeDown 0.6s ease both;
+        }
+
+        .header-eyebrow {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-eyebrow::before {
+            content: '';
+            display: block;
+            width: 28px;
+            height: 1px;
+            background: var(--gold);
+        }
+
+        .header h1 {
+            font-size: clamp(22px, 4vw, 32px);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .header h1 span {
+            color: var(--gold);
+        }
+
+        .header-sub {
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        /* ================================================
+           CARD
+        ================================================ */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 28px;
+            margin-bottom: 24px;
+            animation: fadeUp 0.6s ease both;
+        }
+
+        .card-title {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+        }
+
+        /* ================================================
+           TABS
+        ================================================ */
+        .tab-bar {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 28px;
+            animation: fadeUp 0.5s ease both 0.1s;
+        }
+
+        .tab-btn {
+            position: relative;
+            background: none;
+            border: none;
+            padding: 14px 22px;
+            font-family: var(--sans);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.2s;
+            letter-spacing: 0.02em;
+        }
+
+        .tab-btn::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gold);
+            transform: scaleX(0);
+            transition: transform 0.25s ease;
+        }
+
+        .tab-btn.active {
+            color: var(--gold);
+        }
+
+        .tab-btn.active::after {
+            transform: scaleX(1);
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: var(--text-secondary);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* ================================================
+           TEXTAREA
+        ================================================ */
+        .field-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            letter-spacing: 0.05em;
+        }
+
+        .field-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
         }
 
         textarea {
             width: 100%;
-            height: 150px;
-            font-size: 16px;
-            padding: 10px;
-            box-sizing: border-box;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: var(--mono);
+            font-size: 12px;
+            line-height: 1.7;
+            padding: 14px;
+            resize: vertical;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
         }
 
-        button {
-            margin-top: 20px;
-            padding: 12px 24px;
-            font-size: 16px;
+        textarea::placeholder {
+            color: var(--text-muted);
+            font-family: var(--sans);
+            font-size: 12px;
+        }
+
+        textarea:focus {
+            border-color: var(--gold-dim);
+            box-shadow: 0 0 0 3px var(--gold-glow);
+        }
+
+        /* ================================================
+           INDIVIDUAL TAB - YEAR BLOCKS
+        ================================================ */
+        .year-block {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            background: var(--bg-surface);
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .year-block-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .year-badge {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--gold);
+            background: rgba(201,168,76,0.1);
+            border: 1px solid var(--gold-dim);
+            padding: 3px 10px;
+            border-radius: 4px;
+            letter-spacing: 0.1em;
+            white-space: nowrap;
+        }
+
+        .year-input {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: var(--mono);
+            font-size: 13px;
+            padding: 6px 12px;
+            width: 120px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .year-input:focus {
+            border-color: var(--gold-dim);
+        }
+
+        .remove-year-btn {
+            margin-left: auto;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 4px;
+            width: 28px;
+            height: 28px;
             cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            line-height: 1;
         }
 
-        #loading {
+        .remove-year-btn:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .statement-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 14px;
+        }
+
+        @media (max-width: 680px) {
+            .statement-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .statement-block {}
+
+        .statement-tag {
+            display: inline-block;
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            padding: 2px 8px;
+            border-radius: 3px;
+            margin-bottom: 8px;
+        }
+
+        .tag-pl { background: rgba(61,139,255,0.15); color: var(--blue); border: 1px solid rgba(61,139,255,0.3); }
+        .tag-bs { background: rgba(201,168,76,0.12); color: var(--gold); border: 1px solid rgba(201,168,76,0.25); }
+        .tag-cf { background: rgba(45,212,160,0.12); color: var(--success); border: 1px solid rgba(45,212,160,0.3); }
+
+        .add-year-btn {
+            width: 100%;
+            background: none;
+            border: 1px dashed var(--border-light);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-family: var(--sans);
+            font-size: 13px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 4px;
+        }
+
+        .add-year-btn:hover {
+            border-color: var(--gold-dim);
+            color: var(--gold);
+            background: var(--gold-glow);
+        }
+
+        /* ================================================
+           GENERATE BUTTON
+        ================================================ */
+        .generate-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-generate {
+            position: relative;
+            background: linear-gradient(135deg, #b8922a, #e6c055);
+            border: none;
+            border-radius: 6px;
+            color: #0a0e14;
+            font-family: var(--sans);
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            padding: 14px 32px;
+            cursor: pointer;
+            transition: all 0.2s;
+            overflow: hidden;
+        }
+
+        .btn-generate::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #e6c055, #b8922a);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .btn-generate:hover::before { opacity: 1; }
+        .btn-generate:active { transform: scale(0.98); }
+        .btn-generate:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-generate span { position: relative; }
+
+        .status-text {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* ================================================
+           LOADING
+        ================================================ */
+        .loading-area {
+            display: none;
+            margin-top: 24px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-surface);
+        }
+
+        .loading-inner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--border);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            flex-shrink: 0;
+        }
+
+        .loading-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .loading-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 3px;
+            font-family: var(--mono);
+        }
+
+        /* progress bar */
+        .progress-bar-wrap {
+            height: 2px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-top: 16px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+            border-radius: 2px;
+            animation: progress 120s linear both;
+            width: 0%;
+        }
+
+        /* ================================================
+           RESULT
+        ================================================ */
+        .result-area {
+            display: none;
+            margin-top: 24px;
+            animation: fadeUp 0.5s ease;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .result-label {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-label::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s ease infinite;
+        }
+
+        .btn-download {
+            background: none;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-family: var(--sans);
+            font-size: 12px;
+            font-weight: 500;
+            padding: 8px 18px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-download:hover {
+            border-color: var(--gold-dim);
+            color: var(--gold);
+        }
+
+        .result-image-wrap {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .result-image-wrap img {
+            width: 100%;
+            display: block;
+        }
+
+        /* ================================================
+           PROMPT PREVIEW
+        ================================================ */
+        .prompt-preview {
             margin-top: 20px;
-            font-size: 18px;
-            color: blue;
-            display: none;
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
         }
 
-        #resultImage {
-            margin-top: 30px;
-            max-width: 100%;
-            border: 1px solid #ccc;
-            display: none;
+        .prompt-preview-toggle {
+            background: none;
+            border: none;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            cursor: pointer;
+            letter-spacing: 0.1em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
         }
 
-        #downloadButton {
-            display: none;
-            margin-top: 20px;
+        .prompt-preview-toggle:hover { color: var(--text-secondary); }
+
+        .prompt-preview-toggle .arrow {
+            transition: transform 0.2s;
         }
 
+        .prompt-preview-toggle.open .arrow { transform: rotate(90deg); }
+
+        .prompt-preview-body {
+            display: none;
+            margin-top: 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 14px;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .prompt-preview-body.open { display: block; }
+
+        /* ================================================
+           ANIMATIONS
+        ================================================ */
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        @keyframes progress {
+            0%   { width: 0%; }
+            60%  { width: 75%; }
+            80%  { width: 85%; }
+            100% { width: 90%; }
+        }
+
+        /* ================================================
+           SCROLLBAR
+        ================================================ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
     </style>
 </head>
 
 <body>
 
-    <h1>GPT Image Generator</h1>
+<div class="wrapper">
 
-    <textarea id="promptInput"
-        placeholder="生成したい画像を入力してください"></textarea>
+    <!-- ================================================
+         HEADER
+    ================================================ -->
+    <header class="header">
+        <div class="header-eyebrow">FINANCIAL ANALYTICS</div>
+        <h1>財務ダッシュボード<span>ジェネレーター</span></h1>
+        <p class="header-sub">財務データを入力すると、AI が分析ダッシュボードスライドを自動生成します</p>
+    </header>
 
-    <br>
+    <!-- ================================================
+         INPUT CARD
+    ================================================ -->
+    <div class="card" style="animation-delay:0.1s">
+        <div class="card-title">// INPUT MODE</div>
 
-    <button onclick="generateImage()">
-        画像生成
-    </button>
+        <!-- TAB BAR -->
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('bulk', this)">
+                一括入力（総勘定元帳）
+            </button>
+            <button class="tab-btn" onclick="switchTab('individual', this)">
+                個別入力（PL / BS / CF）
+            </button>
+        </div>
 
-    <div id="loading">
-        画像生成中です...（数分かかることがあります）
+        <!-- ─── TAB 1: 一括入力 ─────────────────────── -->
+        <div id="tab-bulk" class="tab-pane active">
+            <label class="field-label" for="bulkInput">年度別 総勘定元帳データ</label>
+            <textarea id="bulkInput" rows="14"
+                placeholder="例）
+【2022年度】
+売上高: 1,200,000千円
+売上原価: 720,000千円
+売上総利益: 480,000千円
+営業費用: 280,000千円
+営業利益: 200,000千円
+...
+
+【2023年度】
+売上高: 1,350,000千円
+..."></textarea>
+            <p class="field-hint">複数年分のデータをまとめて貼り付けてください。CSV・テキスト形式どちらでも対応しています。</p>
+        </div>
+
+        <!-- ─── TAB 2: 個別入力 ─────────────────────── -->
+        <div id="tab-individual" class="tab-pane">
+
+            <div id="yearBlocksContainer">
+                <!-- Rendered by JS -->
+            </div>
+
+            <button class="add-year-btn" onclick="addYearBlock()">
+                ＋ 年度を追加する
+            </button>
+
+        </div>
+
     </div>
 
-    <img id="resultImage">
+    <!-- ================================================
+         GENERATE CARD
+    ================================================ -->
+    <div class="card" style="animation-delay:0.2s">
+        <div class="card-title">// GENERATE</div>
 
-    <br>
+        <div class="generate-section">
+            <button class="btn-generate" onclick="generateDashboard()" id="generateBtn">
+                <span>ダッシュボードを生成する</span>
+            </button>
+            <div class="status-text" id="statusText">準備完了</div>
+        </div>
 
-    <a id="downloadButton" download="generated_image.png">
-        <button>画像ダウンロード</button>
-    </a>
+        <!-- プロンプトプレビュー -->
+        <div class="prompt-preview">
+            <button class="prompt-preview-toggle" id="promptToggleBtn" onclick="togglePromptPreview()">
+                <span class="arrow">▶</span> PROMPT PREVIEW
+            </button>
+            <div class="prompt-preview-body" id="promptPreviewBody"></div>
+        </div>
 
-    <script>
+        <!-- ローディング -->
+        <div class="loading-area" id="loadingArea">
+            <div class="loading-inner">
+                <div class="spinner"></div>
+                <div>
+                    <div class="loading-text">ダッシュボード画像を生成中です...</div>
+                    <div class="loading-sub">GPT Image API 処理中 ─ 数十秒〜数分かかる場合があります</div>
+                </div>
+            </div>
+            <div class="progress-bar-wrap">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
 
-        async function generateImage() {
+        <!-- 結果 -->
+        <div class="result-area" id="resultArea">
+            <div class="result-header">
+                <span class="result-label">GENERATION COMPLETE</span>
+                <a id="downloadBtn" class="btn-download" download="financial_dashboard.png">
+                    ↓ ダウンロード (.png)
+                </a>
+            </div>
+            <div class="result-image-wrap">
+                <img id="resultImage" src="" alt="生成されたダッシュボード">
+            </div>
+        </div>
 
-            const prompt =
-                document.getElementById('promptInput').value;
+    </div>
 
-            if (!prompt) {
-                alert('プロンプトを入力してください');
-                return;
-            }
+</div><!-- /wrapper -->
 
-            const loading =
-                document.getElementById('loading');
+<script>
 
-            const image =
-                document.getElementById('resultImage');
+// ================================================
+// STATE
+// ================================================
+let activeTab   = 'bulk';
+let yearCounter = 0;
 
-            const downloadButton =
-                document.getElementById('downloadButton');
+// ================================================
+// AZURE FUNCTION URL
+// ================================================
+const FUNCTION_URL = 'https://testhttp-f6ehaqhvh3hvezcc.eastus2-01.azurewebsites.net/api/HttpTrigger2';
 
-            loading.style.display = 'block';
+// ================================================
+// TAB SWITCHING
+// ================================================
+function switchTab(tab, btn) {
+    activeTab = tab;
 
-            image.style.display = 'none';
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
-            downloadButton.style.display = 'none';
+    document.getElementById('tab-' + tab).classList.add('active');
+    btn.classList.add('active');
 
-            try {
+    updatePromptPreview();
+}
 
-                // ====================================
-                // Azure Function URL
-                // ====================================
+// ================================================
+// YEAR BLOCKS (個別入力 tab)
+// ================================================
+function addYearBlock(defaultYear) {
+    yearCounter++;
+    const id = 'year-' + yearCounter;
+    const currentYear = new Date().getFullYear();
+    const year = defaultYear || (currentYear - 1);
 
-                const functionUrl =
-                    'https://testhttp-f6ehaqhvh3hvezcc.eastus2-01.azurewebsites.net/api/HttpTrigger2';
+    const block = document.createElement('div');
+    block.className = 'year-block';
+    block.id = id;
+    block.innerHTML = `
+        <div class="year-block-header">
+            <span class="year-badge">YEAR ${yearCounter}</span>
+            <input type="text" class="year-input" value="${year}" placeholder="2023"
+                onchange="updatePromptPreview()"
+                oninput="updatePromptPreview()">
+            <button class="remove-year-btn" onclick="removeYearBlock('${id}')" title="削除">×</button>
+        </div>
+        <div class="statement-grid">
+            <div class="statement-block">
+                <span class="statement-tag tag-pl">P/L 損益計算書</span>
+                <textarea rows="8" class="pl-input" placeholder="売上高: 1,200,000千円
+売上原価: 720,000千円
+売上総利益: 480,000千円
+営業利益: 200,000千円
+経常利益: 195,000千円
+当期純利益: 130,000千円" oninput="updatePromptPreview()"></textarea>
+            </div>
+            <div class="statement-block">
+                <span class="statement-tag tag-bs">B/S 貸借対照表</span>
+                <textarea rows="8" class="bs-input" placeholder="流動資産: 450,000千円
+固定資産: 800,000千円
+資産合計: 1,250,000千円
+流動負債: 300,000千円
+固定負債: 200,000千円
+純資産: 750,000千円" oninput="updatePromptPreview()"></textarea>
+            </div>
+            <div class="statement-block">
+                <span class="statement-tag tag-cf">C/F キャッシュフロー</span>
+                <textarea rows="8" class="cf-input" placeholder="営業CF: +180,000千円
+投資CF: -120,000千円
+財務CF: -40,000千円
+現金増減: +20,000千円
+期末残高: 220,000千円" oninput="updatePromptPreview()"></textarea>
+            </div>
+        </div>
+    `;
 
-                // ====================================
-                // API CALL
-                // ====================================
+    document.getElementById('yearBlocksContainer').appendChild(block);
+    updatePromptPreview();
+}
 
-                const response = await fetch(functionUrl, {
+function removeYearBlock(id) {
+    const blocks = document.querySelectorAll('.year-block');
+    if (blocks.length <= 1) return; // 最低1年は残す
+    document.getElementById(id)?.remove();
+    updatePromptPreview();
+}
 
-                    method: 'POST',
+// 初期表示: 2年分
+addYearBlock(new Date().getFullYear() - 2);
+addYearBlock(new Date().getFullYear() - 1);
 
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+// ================================================
+// PROMPT BUILDER
+// ================================================
+function buildPrompt() {
+    if (activeTab === 'bulk') {
+        const data = document.getElementById('bulkInput').value.trim();
 
-                    body: JSON.stringify({
-                        prompt: prompt
-                    })
-                });
+        return `You are a financial data visualization expert and graphic designer. Create a highly professional financial dashboard slide image with the following specifications:
 
-                if (!response.ok) {
-                    throw new Error(
-                        'HTTP Error: ' + response.status
-                    );
-                }
+LAYOUT: Wide-format dashboard (landscape orientation) with multiple charts arranged in a clean grid
+CHARTS TO INCLUDE:
+1. Revenue & Profit Trend – grouped bar chart or line chart showing year-over-year changes
+2. Profit Margin Analysis – line chart showing gross margin %, operating margin %, net margin % by year
+3. Balance Sheet Composition – stacked bar chart showing assets vs liabilities/equity breakdown
+4. Cash Flow Waterfall – waterfall chart showing operating/investing/financing CF
+5. KPI Summary Panel – large key numbers panel showing YoY growth rates
 
-                // ====================================
-                // IMAGE BLOB
-                // ====================================
+DESIGN: Dark navy/charcoal background (#0a0e1a), gold and blue chart colors, white labels, clean sans-serif Japanese typography, executive presentation quality, no decorative illustrations
 
-                const blob = await response.blob();
+All axis labels and chart titles must be in Japanese. Show exact numbers from the data.
 
-                const imageUrl =
-                    URL.createObjectURL(blob);
+FINANCIAL DATA:
+${data || '（データが入力されていません）'}`;
 
-                // ====================================
-                // IMAGE DISPLAY
-                // ====================================
+    } else {
+        // 個別入力モード
+        const blocks = document.querySelectorAll('.year-block');
+        let dataSection = '';
 
-                image.src = imageUrl;
+        blocks.forEach(block => {
+            const year = block.querySelector('.year-input')?.value || '不明';
+            const pl   = block.querySelector('.pl-input')?.value.trim()  || '（未入力）';
+            const bs   = block.querySelector('.bs-input')?.value.trim()  || '（未入力）';
+            const cf   = block.querySelector('.cf-input')?.value.trim()  || '（未入力）';
 
-                image.style.display = 'block';
+            dataSection += `
+【${year}年度】
+▼ 損益計算書 (P/L)
+${pl}
 
-                // ====================================
-                // DOWNLOAD BUTTON
-                // ====================================
+▼ 貸借対照表 (B/S)
+${bs}
 
-                downloadButton.href = imageUrl;
+▼ キャッシュフロー計算書 (C/F)
+${cf}
+---`;
+        });
 
-                downloadButton.style.display = 'inline-block';
+        const yearCount = blocks.length;
+        const yearRange = Array.from(blocks).map(b => b.querySelector('.year-input')?.value).join('・');
 
-            }
-            catch (error) {
+        return `You are a financial data visualization expert and graphic designer. Create a highly professional financial dashboard slide image comparing ${yearCount} fiscal years (${yearRange}).
 
-                console.error(error);
+LAYOUT: Wide-format dashboard (landscape orientation) with multiple charts in a clean grid layout
+CHARTS TO INCLUDE:
+1. P/L Trend Chart – grouped bar chart: Revenue, Gross Profit, Operating Income, Net Income by year (show actual figures)
+2. Margin Analysis – multi-line chart: Gross margin %, Operating margin %, Net margin % across years
+3. B/S Structure Chart – stacked horizontal bar per year showing asset composition and liability/equity structure
+4. Cash Flow Comparison – grouped bar chart: Operating CF, Investing CF, Financing CF by year
+5. KPI Summary Row – prominent numbers showing key YoY changes (revenue growth %, ROE, debt ratio)
 
-                alert(
-                    'エラーが発生しました: ' +
-                    error.message
-                );
-            }
-            finally {
+DESIGN: Dark navy background (#0a0e1a), gold (#c9a84c) and electric blue (#3d8bff) and teal (#2dd4a0) chart colors, crisp white labels, clean Japanese typography, high-contrast executive presentation style
 
-                loading.style.display = 'none';
-            }
+All labels, titles, and annotations must be in Japanese. Plot exact values from the data provided.
+
+FINANCIAL DATA:
+${dataSection}`;
+    }
+}
+
+// ================================================
+// PROMPT PREVIEW
+// ================================================
+function updatePromptPreview() {
+    const body = document.getElementById('promptPreviewBody');
+    if (body.classList.contains('open')) {
+        body.textContent = buildPrompt();
+    }
+}
+
+function togglePromptPreview() {
+    const btn  = document.getElementById('promptToggleBtn');
+    const body = document.getElementById('promptPreviewBody');
+    const isOpen = body.classList.toggle('open');
+    btn.classList.toggle('open', isOpen);
+    if (isOpen) body.textContent = buildPrompt();
+}
+
+// ================================================
+// GENERATE
+// ================================================
+async function generateDashboard() {
+
+    const prompt = buildPrompt();
+    const hasData = activeTab === 'bulk'
+        ? document.getElementById('bulkInput').value.trim().length > 0
+        : Array.from(document.querySelectorAll('.pl-input, .bs-input, .cf-input'))
+              .some(t => t.value.trim().length > 0);
+
+    if (!hasData) {
+        alert('財務データを入力してください。');
+        return;
+    }
+
+    const btn         = document.getElementById('generateBtn');
+    const statusText  = document.getElementById('statusText');
+    const loadingArea = document.getElementById('loadingArea');
+    const resultArea  = document.getElementById('resultArea');
+    const progressBar = document.getElementById('progressBar');
+    const resultImg   = document.getElementById('resultImage');
+    const dlBtn       = document.getElementById('downloadBtn');
+
+    // ─── UI: loading state ───────────────────────
+    btn.disabled = true;
+    statusText.textContent = '生成中...';
+    loadingArea.style.display = 'block';
+    resultArea.style.display  = 'none';
+
+    // reset progress animation
+    progressBar.style.animation = 'none';
+    progressBar.offsetHeight; // reflow
+    progressBar.style.animation = '';
+
+    try {
+        // ─── API CALL ────────────────────────────
+        const response = await fetch(FUNCTION_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text().catch(() => '');
+            throw new Error(`HTTP ${response.status}: ${errText}`);
         }
 
-    </script>
+        // ─── IMAGE BLOB ──────────────────────────
+        const blob     = await response.blob();
+        const imageUrl = URL.createObjectURL(blob);
+
+        // ─── DISPLAY ─────────────────────────────
+        resultImg.src  = imageUrl;
+        dlBtn.href     = imageUrl;
+        resultArea.style.display = 'block';
+        statusText.textContent   = '✓ 生成完了';
+
+    } catch (err) {
+        console.error(err);
+        alert('エラーが発生しました:\n' + err.message);
+        statusText.textContent = 'エラー — 再試行してください';
+
+    } finally {
+        btn.disabled = false;
+        loadingArea.style.display = 'none';
+        progressBar.style.animation = 'none';
+    }
+}
+
+</script>
 
 </body>
 </html>
