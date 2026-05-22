@@ -727,6 +727,40 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg2); border-radius: 3px; }
         ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+        
+        /* ==========================================
+           PROMPT PREVIEW
+        ========================================== */
+        
+        .prompt-body{
+            display:none;
+            margin-top:14px;
+            padding:18px;
+            border-radius:16px;
+            background:#0f172a;
+            color:#dbeafe;
+            white-space:pre-wrap;
+            font-size:13px;
+            line-height:1.7;
+            border:1px solid rgba(255,255,255,0.08);
+            max-height:400px;
+            overflow:auto;
+        }
+        
+        .prompt-body.open{
+            display:block;
+        }
+        
+        /* ==========================================
+           GENERATE BUTTON DISABLED
+        ========================================== */
+        
+        .btn-generate:disabled{
+            opacity:0.45;
+            cursor:not-allowed;
+            transform:none !important;
+            filter:grayscale(0.2);
+        }
     </style>
 </head>
 
@@ -841,10 +875,19 @@
 
         <!-- データプレビュー -->
         <div class="prompt-section">
-            <button class="prompt-toggle" id="promptToggleBtn" onclick="togglePrompt()">
+        
+            <button
+                class="prompt-toggle"
+                id="promptToggleBtn"
+                onclick="togglePrompt()"
+            >
                 <span class="arrow">▶</span>
                 送信データ PREVIEW
             </button>
+        
+            <div class="prompt-body" id="promptBody">
+            </div>
+        
         </div>
 
         <!-- ローディング -->
@@ -1275,6 +1318,24 @@ ${cf}
 }
 
 // ================================================
+// VALIDATION
+// ================================================
+function validateGenerateButton() {
+
+    const btn =
+        document.getElementById('generateBtn');
+
+    const financialData =
+        buildFinancialData();
+
+    const hasData =
+        financialData &&
+        financialData.trim() !== '';
+
+    btn.disabled = !hasData;
+}
+
+// ================================================
 // DATA PREVIEW
 // ================================================
 function togglePrompt() {
@@ -1289,17 +1350,17 @@ function togglePrompt() {
 
     body.classList.toggle('open');
 
-    if (body.classList.contains('open')) {
-        updatePromptPreview();
-    }
+    updatePromptPreview();
 }
 
 function updatePromptPreview() {
 
+    validateGenerateButton();
+
     const body =
         document.getElementById('promptBody');
 
-    if (!body || !body.classList.contains('open')) {
+    if (!body) {
         return;
     }
 
